@@ -1,0 +1,39 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#87CEEB"/>
+  
+  <!-- Rainbow arcs -->
+  <path d="M 50 350 Q 256 150 462 350" stroke="#FF0000" stroke-width="25" fill="none" stroke-linecap="round"/>
+  <path d="M 65 350 Q 256 175 447 350" stroke="#FF8C00" stroke-width="25" fill="none" stroke-linecap="round"/>
+  <path d="M 80 350 Q 256 200 432 350" stroke="#FFD700" stroke-width="25" fill="none" stroke-linecap="round"/>
+  <path d="M 95 350 Q 256 225 417 350" stroke="#32CD32" stroke-width="25" fill="none" stroke-linecap="round"/>
+  <path d="M 110 350 Q 256 250 402 350" stroke="#1E90FF" stroke-width="25" fill="none" stroke-linecap="round"/>
+  <path d="M 125 350 Q 256 275 387 350" stroke="#4B0082" stroke-width="25" fill="none" stroke-linecap="round"/>
+  <path d="M 140 350 Q 256 300 372 350" stroke="#9400D3" stroke-width="25" fill="none" stroke-linecap="round"/>
+  
+  <!-- Clouds -->
+  <ellipse cx="100" cy="380" rx="40" ry="25" fill="white"/>
+  <ellipse cx="80" cy="370" rx="30" ry="20" fill="white"/>
+  <ellipse cx="120" cy="370" rx="25" ry="18" fill="white"/>
+  
+  <ellipse cx="412" cy="380" rx="40" ry="25" fill="white"/>
+  <ellipse cx="432" cy="370" rx="30" ry="20" fill="white"/>
+  <ellipse cx="392" cy="370" rx="25" ry="18" fill="white"/>
+  
+  <!-- Sun -->
+  <circle cx="400" cy="120" r="40" fill="#FFD700" stroke="#FFA500" stroke-width="4"/>
+  <line x1="400" y1="60" x2="400" y2="40" stroke="#FFD700" stroke-width="6" stroke-linecap="round"/>
+  <line x1="440" y1="80" x2="454" y2="66" stroke="#FFD700" stroke-width="6" stroke-linecap="round"/>
+  <line x1="460" y1="120" x2="480" y2="120" stroke="#FFD700" stroke-width="6" stroke-linecap="round"/>
+  <line x1="440" y1="160" x2="454" y2="174" stroke="#FFD700" stroke-width="6" stroke-linecap="round"/>
+  <line x1="400" y1="180" x2="400" y2="200" stroke="#FFD700" stroke-width="6" stroke-linecap="round"/>
+  <line x1="360" y1="160" x2="346" y2="174" stroke="#FFD700" stroke-width="6" stroke-linecap="round"/>
+  <line x1="340" y1="120" x2="320" y2="120" stroke="#FFD700" stroke-width="6" stroke-linecap="round"/>
+  <line x1="360" y1="80" x2="346" y2="66" stroke="#FFD700" stroke-width="6" stroke-linecap="round"/>
+  
+  <!-- Sparkles -->
+  <path d="M 150 180 L 160 190 L 150 200 L 140 190 Z" fill="white"/>
+  <path d="M 320 220 L 325 225 L 320 230 L 315 225 Z" fill="white"/>
+  <circle cx="200" cy="160" r="3" fill="white"/>
+  <circle cx="280" cy="180" r="4" fill="white"/>
+</svg>

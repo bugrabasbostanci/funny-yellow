@@ -1,0 +1,26 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#FFD700" stroke="#FFA500" stroke-width="8"/>
+  
+  <!-- Crying eyes -->
+  <ellipse cx="180" cy="200" rx="15" ry="25" fill="#333"/>
+  <ellipse cx="332" cy="200" rx="15" ry="25" fill="#333"/>
+  
+  <!-- Tears -->
+  <ellipse cx="165" cy="240" rx="8" ry="20" fill="#87CEEB"/>
+  <ellipse cx="347" cy="240" rx="8" ry="20" fill="#87CEEB"/>
+  <ellipse cx="155" cy="280" rx="6" ry="15" fill="#87CEEB"/>
+  <ellipse cx="357" cy="280" rx="6" ry="15" fill="#87CEEB"/>
+  
+  <!-- Laughing mouth -->
+  <ellipse cx="256" cy="330" rx="80" ry="40" fill="#333"/>
+  <ellipse cx="256" cy="315" rx="70" ry="25" fill="#FFD700"/>
+  
+  <!-- Teeth -->
+  <rect x="210" y="320" width="8" height="15" fill="white"/>
+  <rect x="225" y="320" width="8" height="15" fill="white"/>
+  <rect x="240" y="320" width="8" height="15" fill="white"/>
+  <rect x="255" y="320" width="8" height="15" fill="white"/>
+  <rect x="270" y="320" width="8" height="15" fill="white"/>
+  <rect x="285" y="320" width="8" height="15" fill="white"/>
+</svg>

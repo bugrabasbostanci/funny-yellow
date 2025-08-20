@@ -1,0 +1,95 @@
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables');
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: false, // For MVP, we'll keep it simple without user sessions
+  },
+});
+
+// Database types for better TypeScript support
+export type Database = {
+  public: {
+    Tables: {
+      stickers: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          category: string;
+          tags: string[] | null;
+          file_url: string;
+          thumbnail_url: string;
+          file_size: number;
+          file_format: string;
+          width: number;
+          height: number;
+          download_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          category: string;
+          tags?: string[] | null;
+          file_url: string;
+          thumbnail_url: string;
+          file_size: number;
+          file_format: string;
+          width: number;
+          height: number;
+          download_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          slug?: string;
+          category?: string;
+          tags?: string[] | null;
+          file_url?: string;
+          thumbnail_url?: string;
+          file_size?: number;
+          file_format?: string;
+          width?: number;
+          height?: number;
+          download_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      downloads: {
+        Row: {
+          id: string;
+          sticker_id: string;
+          ip_hash: string;
+          user_agent: string | null;
+          downloaded_at: string;
+        };
+        Insert: {
+          id?: string;
+          sticker_id: string;
+          ip_hash: string;
+          user_agent?: string | null;
+          downloaded_at?: string;
+        };
+        Update: {
+          id?: string;
+          sticker_id?: string;
+          ip_hash?: string;
+          user_agent?: string | null;
+          downloaded_at?: string;
+        };
+      };
+    };
+  };
+};

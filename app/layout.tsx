@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Inter, Fredoka } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
+import { PerformanceMonitor } from "@/components/performance-monitor";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -18,12 +19,60 @@ const fredoka = Fredoka({
 });
 
 export const metadata: Metadata = {
-  title: "Funny Yellow - Free Stickers for WhatsApp",
+  title: "Funny Yellow - Free WhatsApp Stickers | Download Instantly",
   description:
-    "Make Chat Fun Again! High-quality, funny stickers for WhatsApp and more. Download free sticker packs instantly.",
-  keywords:
-    "stickers, WhatsApp stickers, funny stickers, free stickers, chat stickers",
-  generator: "Funny Yellow",
+    "Make Chat Fun Again! 🎉 Download high-quality, funny stickers for WhatsApp instantly. 100% free sticker collection with easy WhatsApp integration.",
+  keywords: [
+    "WhatsApp stickers",
+    "free stickers", 
+    "funny stickers",
+    "sticker packs",
+    "WhatsApp sticker maker",
+    "emoji stickers",
+    "chat stickers",
+    "instant download",
+    "webp stickers"
+  ],
+  authors: [{ name: "Funny Yellow Team" }],
+  creator: "Funny Yellow",
+  publisher: "Funny Yellow",
+  category: "Entertainment",
+  openGraph: {
+    title: "Funny Yellow - Free WhatsApp Stickers",
+    description: "Download high-quality, funny stickers for WhatsApp instantly. 100% free sticker collection.",
+    url: "https://funnyyellow.com",
+    siteName: "Funny Yellow",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Funny Yellow - Free WhatsApp Stickers",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Funny Yellow - Free WhatsApp Stickers",
+    description: "Download high-quality, funny stickers for WhatsApp instantly. 100% free!",
+    images: ["/twitter-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  verification: {
+    google: "your-google-verification-code", // To be added
+  },
 };
 
 export default function RootLayout({
@@ -37,7 +86,13 @@ export default function RootLayout({
       className={`${inter.variable} ${fredoka.variable} antialiased`}
     >
       <body className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-50">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {children}
+          <PerformanceMonitor 
+            enabled={process.env.NODE_ENV === 'development'} 
+            debug={process.env.NODE_ENV === 'development'} 
+          />
+        </AuthProvider>
       </body>
     </html>
   );

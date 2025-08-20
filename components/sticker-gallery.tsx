@@ -1,107 +1,184 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { StickerCard } from "./sticker-card";
 import { CategoryFilter } from "./category-filter";
 import { WhatsAppIntegration } from "./whatsapp-integration";
+import { HowToGuide } from "./how-to-guide";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Grid3X3, Grid2X2, List, MessageCircle } from "lucide-react";
+import { Search, MessageCircle } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { DatabaseService } from "@/lib/database-service";
 
-// Mock data for stickers - all free for MVP
+// Fallback mock data for when database is not available
 const mockStickers = [
   {
     id: "1",
-    name: "Laughing Face",
+    name: "Happy Face",
     category: "funny-emoji",
-    imageUrl: "/placeholder.svg?height=200&width=200",
-    downloadCount: 15420,
-    isLiked: true,
+    file_url: "/stickers/webp/happy-face.webp",
+    download_count: 15420,
+    tags: ["happy", "smile", "positive"],
   },
   {
     id: "2",
     name: "Thumbs Up",
     category: "reactions",
-    imageUrl: "/placeholder.svg?height=200&width=200",
-    downloadCount: 8930,
-    isLiked: false,
+    file_url: "/stickers/webp/thumbs-up.webp",
+    download_count: 8930,
+    tags: ["good", "approval", "like"],
   },
   {
     id: "3",
-    name: "Crying Laughing",
+    name: "Crying Laugh",
     category: "memes",
-    imageUrl: "/placeholder.svg?height=200&width=200",
-    downloadCount: 23150,
-    isLiked: true,
+    file_url: "/stickers/webp/crying-laugh.webp",
+    download_count: 23150,
+    tags: ["funny", "lol", "tears"],
   },
   {
     id: "4",
     name: "Heart Eyes",
     category: "expressions",
-    imageUrl: "/placeholder.svg?height=200&width=200",
-    downloadCount: 12680,
-    isLiked: false,
+    file_url: "/stickers/webp/heart-eyes.webp",
+    download_count: 12680,
+    tags: ["love", "heart", "crush"],
   },
   {
     id: "5",
     name: "Cute Cat",
     category: "animals",
-    imageUrl: "/placeholder.svg?height=200&width=200",
-    downloadCount: 19240,
-    isLiked: true,
+    file_url: "/stickers/webp/cute-cat.webp",
+    download_count: 19240,
+    tags: ["cat", "cute", "pet"],
   },
   {
     id: "6",
     name: "Winking Face",
     category: "funny-emoji",
-    imageUrl: "/placeholder.svg?height=200&width=200",
-    downloadCount: 7850,
-    isLiked: false,
+    file_url: "/stickers/webp/winking-face.webp",
+    download_count: 7850,
+    tags: ["wink", "flirt", "secret"],
   },
   {
     id: "7",
-    name: "Angry React",
+    name: "Angry Face",
     category: "reactions",
-    imageUrl: "/placeholder.svg?height=200&width=200",
-    downloadCount: 5420,
-    isLiked: false,
+    file_url: "/stickers/webp/angry-face.webp",
+    download_count: 5420,
+    tags: ["angry", "mad", "rage"],
   },
   {
     id: "8",
-    name: "Surprised Pikachu",
-    category: "memes",
-    imageUrl: "/placeholder.svg?height=200&width=200",
-    downloadCount: 31200,
-    isLiked: true,
+    name: "Shocked Face",
+    category: "reactions",
+    file_url: "/stickers/webp/shocked-face.webp",
+    download_count: 31200,
+    tags: ["surprised", "wow", "shock"],
+  },
+  {
+    id: "9",
+    name: "Cool Sunglasses",
+    category: "expressions",
+    file_url: "/stickers/webp/cool-sunglasses.webp",
+    download_count: 14500,
+    tags: ["cool", "sunglasses", "awesome"],
+  },
+  {
+    id: "10",
+    name: "Party Hat",
+    category: "celebration",
+    file_url: "/stickers/webp/party-hat.webp",
+    download_count: 9800,
+    tags: ["party", "celebration", "fun"],
   },
 ];
 
-const categories = [
+const mockCategories = [
   { id: "funny-emoji", name: "Funny Emoji", count: 2, icon: "😄" },
-  { id: "reactions", name: "Reactions", count: 2, icon: "👍" },
-  { id: "memes", name: "Memes", count: 2, icon: "🤣" },
-  { id: "expressions", name: "Expressions", count: 1, icon: "😍" },
+  { id: "reactions", name: "Reactions", count: 3, icon: "👍" },
+  { id: "memes", name: "Memes", count: 1, icon: "🤣" },
+  { id: "expressions", name: "Expressions", count: 2, icon: "😍" },
   { id: "animals", name: "Animals", count: 1, icon: "🐱" },
+  { id: "celebration", name: "Celebration", count: 1, icon: "🎉" },
 ];
 
-type ViewMode = "grid-large" | "grid-small" | "list";
+type StickerData = {
+  id: string;
+  name: string;
+  category: string;
+  file_url: string;
+  download_count: number;
+  tags?: string[];
+};
+
+type CategoryData = {
+  id: string;
+  name: string;
+  count: number;
+  icon: string;
+};
+
+// WhatsApp sticker format for integration
+type WhatsAppSticker = {
+  id: string;
+  name: string;
+  category: string;
+  imageUrl: string;
+  downloadCount: number;
+  isLiked: boolean;
+};
 
 export function StickerGallery() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("grid-large");
   const [likedStickers, setLikedStickers] = useState<Set<string>>(
-    new Set(["1", "3", "5", "8"])
+    new Set() // Start with no liked stickers
   );
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
-  const [selectedStickers, setSelectedStickers] = useState<typeof mockStickers>([]);
+  const [selectedStickers, setSelectedStickers] = useState<WhatsAppSticker[]>(
+    []
+  );
+  const [stickers, setStickers] = useState<StickerData[]>([]);
+  const [categories, setCategories] = useState<CategoryData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [usingFallbackData, setUsingFallbackData] = useState(false);
 
   const { user, addToFavorites, removeFromFavorites, addToDownloadHistory } =
     useAuth();
 
+  // Load stickers and categories on component mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+
+        // Try to fetch from database
+        const [stickersData, categoriesData] = await Promise.all([
+          DatabaseService.getStickers(),
+          DatabaseService.getCategories(),
+        ]);
+
+        setStickers(stickersData);
+        setCategories(categoriesData);
+        setUsingFallbackData(false);
+      } catch (error) {
+        console.warn("Database not available, using fallback data:", error);
+        // Use fallback mock data
+        setStickers(mockStickers);
+        setCategories(mockCategories);
+        setUsingFallbackData(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
   const filteredStickers = useMemo(() => {
-    let filtered = mockStickers;
+    let filtered = stickers;
 
     // Filter by category
     if (selectedCategory !== "all") {
@@ -112,13 +189,19 @@ export function StickerGallery() {
 
     // Filter by search query
     if (searchQuery) {
-      filtered = filtered.filter((sticker) =>
-        sticker.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      filtered = filtered.filter((sticker) => {
+        const nameMatch = sticker.name
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase());
+        const tagMatch = sticker.tags?.some((tag) =>
+          tag.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        return nameMatch || tagMatch;
+      });
     }
 
     return filtered;
-  }, [selectedCategory, searchQuery]);
+  }, [stickers, selectedCategory, searchQuery]);
 
   const handleLike = (stickerId: string) => {
     if (likedStickers.has(stickerId)) {
@@ -134,10 +217,25 @@ export function StickerGallery() {
     }
   };
 
-  const handleDownload = (stickerId: string) => {
+  const handleDownload = async (stickerId: string) => {
     if (user) {
       addToDownloadHistory(stickerId);
     }
+
+    // Track download in database if available
+    if (!usingFallbackData) {
+      try {
+        // Get user's IP address for tracking (in a real app, this would be done server-side)
+        await DatabaseService.trackDownload(
+          stickerId,
+          "0.0.0.0",
+          navigator.userAgent
+        );
+      } catch (error) {
+        console.warn("Failed to track download:", error);
+      }
+    }
+
     console.log("Downloading sticker:", stickerId);
   };
 
@@ -146,8 +244,9 @@ export function StickerGallery() {
   };
 
   const handleCreateWhatsAppPack = () => {
-    const favoriteStickers = mockStickers.filter((sticker) =>
-      user ? user.favorites.includes(sticker.id) : likedStickers.has(sticker.id)
+    // Use current liked stickers for pack creation
+    const favoriteStickers = stickers.filter((sticker) =>
+      likedStickers.has(sticker.id)
     );
 
     if (favoriteStickers.length === 0) {
@@ -155,28 +254,53 @@ export function StickerGallery() {
       return;
     }
 
-    setSelectedStickers(favoriteStickers);
+    // Transform StickerData to WhatsApp Sticker format
+    const whatsappStickers = favoriteStickers.map((sticker) => ({
+      id: sticker.id,
+      name: sticker.name,
+      category: sticker.category,
+      imageUrl: sticker.file_url,
+      downloadCount: sticker.download_count,
+      isLiked: likedStickers.has(sticker.id), // Use dynamic liked state
+    }));
+
+    setSelectedStickers(whatsappStickers);
     setShowWhatsAppModal(true);
   };
 
-  const getGridClasses = () => {
-    switch (viewMode) {
-      case "grid-large":
-        return "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5";
-      case "grid-small":
-        return "grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8";
-      case "list":
-        return "grid-cols-1";
-      default:
-        return "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5";
-    }
-  };
+  // Simple grid layout for MVP
+  const gridClasses =
+    "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5";
 
-  const favoriteCount = user ? user.favorites.length : likedStickers.size;
+  // Use dynamic liked stickers count for accurate display
+  const favoriteCount = likedStickers.size;
+
+  if (loading) {
+    return (
+      <section className="py-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading stickers...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-8">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Database status indicator */}
+        {usingFallbackData && (
+          <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-6">
+            <p className="text-sm">
+              <strong>Demo Mode:</strong> Using local sticker data. Database
+              integration available in production.
+            </p>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
@@ -184,13 +308,15 @@ export function StickerGallery() {
               Sticker Gallery
             </h2>
             <p className="text-muted-foreground">
-              Discover {mockStickers.length} free stickers across{" "}
+              Discover {stickers.length} free stickers across{" "}
               {categories.length} categories
             </p>
           </div>
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2 mt-4 sm:mt-0">
+            <HowToGuide />
+
             {favoriteCount > 0 && (
               <Button
                 onClick={handleCreateWhatsAppPack}
@@ -201,31 +327,6 @@ export function StickerGallery() {
                 Create Pack ({favoriteCount})
               </Button>
             )}
-
-            {/* View Mode Toggle */}
-            <div className="flex items-center gap-1 border rounded-lg p-1">
-              <Button
-                variant={viewMode === "grid-large" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("grid-large")}
-              >
-                <Grid2X2 className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={viewMode === "grid-small" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("grid-small")}
-              >
-                <Grid3X3 className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={viewMode === "list" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("list")}
-              >
-                <List className="w-4 h-4" />
-              </Button>
-            </div>
           </div>
         </div>
 
@@ -265,7 +366,8 @@ export function StickerGallery() {
             {searchQuery && (
               <span>
                 {" "}
-                for &ldquo;<span className="font-medium">{searchQuery}</span>&rdquo;
+                for &ldquo;<span className="font-medium">{searchQuery}</span>
+                &rdquo;
               </span>
             )}
           </p>
@@ -273,7 +375,7 @@ export function StickerGallery() {
 
         {/* Sticker Grid */}
         {filteredStickers.length > 0 ? (
-          <div className={`grid gap-4 ${getGridClasses()}`}>
+          <div className={`grid gap-4 ${gridClasses}`}>
             {filteredStickers.map((sticker) => (
               <StickerCard
                 key={sticker.id}
@@ -283,8 +385,8 @@ export function StickerGallery() {
                   categories.find((cat) => cat.id === sticker.category)?.name ||
                   sticker.category
                 }
-                imageUrl={sticker.imageUrl}
-                downloadCount={sticker.downloadCount}
+                imageUrl={sticker.file_url}
+                downloadCount={sticker.download_count}
                 isLiked={
                   user
                     ? user.favorites.includes(sticker.id)
@@ -301,8 +403,8 @@ export function StickerGallery() {
             <div className="text-6xl mb-4">🔍</div>
             <h3 className="text-xl font-semibold mb-2">No stickers found</h3>
             <p className="text-muted-foreground mb-4">
-              Try adjusting your search or category filter to find what you&apos;re
-              looking for.
+              Try adjusting your search or category filter to find what
+              you&apos;re looking for.
             </p>
             <Button
               onClick={() => {
@@ -323,6 +425,47 @@ export function StickerGallery() {
             </Button>
           </div>
         )}
+
+        {/* How To Add Guide Section - Static as per MVP docs */}
+        <div className="bg-yellow-100 p-6 mt-12 rounded-lg">
+          <h3 className="text-xl font-display font-bold mb-4 text-center">
+            📱 How to Add Stickers to WhatsApp?
+          </h3>
+
+          <div className="grid md:grid-cols-2 gap-6 mt-4">
+            <div className="bg-white/70 rounded-lg p-4">
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                📱 Mobile (Android/iOS):
+              </h4>
+              <ol className="text-sm space-y-1 text-gray-700">
+                <li>1. Download any &quot;Sticker Maker&quot; app</li>
+                <li>2. Import downloaded stickers</li>
+                <li>3. Create pack & add to WhatsApp</li>
+              </ol>
+            </div>
+
+            <div className="bg-white/70 rounded-lg p-4">
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                💻 Desktop/Web:
+              </h4>
+              <ol className="text-sm space-y-1 text-gray-700">
+                <li>1. Open any chat in WhatsApp</li>
+                <li>2. Click emoji icon → Sticker tab</li>
+                <li>3. Click + and select downloaded file</li>
+              </ol>
+            </div>
+          </div>
+
+          <div className="text-center mt-6">
+            <HowToGuide
+              trigger={
+                <Button className="bg-yellow-600 hover:bg-yellow-700 text-white">
+                  View Detailed Guide
+                </Button>
+              }
+            />
+          </div>
+        </div>
 
         {/* WhatsApp Integration Modal */}
         <WhatsAppIntegration

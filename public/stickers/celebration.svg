@@ -1,0 +1,60 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#FFE4B5"/>
+  
+  <!-- Main celebration character -->
+  <circle cx="256" cy="280" r="120" fill="#FFD700" stroke="#FFA500" stroke-width="8"/>
+  
+  <!-- Raised arms -->
+  <ellipse cx="150" cy="200" rx="25" ry="60" fill="#FFDBAC" stroke="#D4A574" stroke-width="4" transform="rotate(-30 150 200)"/>
+  <ellipse cx="362" cy="200" rx="25" ry="60" fill="#FFDBAC" stroke="#D4A574" stroke-width="4" transform="rotate(30 362 200)"/>
+  
+  <!-- Hands -->
+  <circle cx="120" cy="150" r="18" fill="#FFDBAC" stroke="#D4A574" stroke-width="3"/>
+  <circle cx="392" cy="150" r="18" fill="#FFDBAC" stroke="#D4A574" stroke-width="3"/>
+  
+  <!-- Happy eyes -->
+  <path d="M 220 250 Q 230 240 240 250" stroke="#333" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M 272 250 Q 282 240 292 250" stroke="#333" stroke-width="6" fill="none" stroke-linecap="round"/>
+  
+  <!-- Big smile -->
+  <path d="M 200 320 Q 256 360 312 320" stroke="#333" stroke-width="8" fill="none" stroke-linecap="round"/>
+  
+  <!-- Confetti explosion -->
+  <rect x="80" y="80" width="8" height="8" rx="2" fill="#FF1493" transform="rotate(45 84 84)"/>
+  <rect x="420" y="90" width="8" height="8" rx="2" fill="#32CD32" transform="rotate(30 424 94)"/>
+  <rect x="100" y="120" width="6" height="6" rx="1" fill="#00BFFF" transform="rotate(60 103 123)"/>
+  <rect x="400" y="140" width="6" height="6" rx="1" fill="#FFD700" transform="rotate(20 403 143)"/>
+  <rect x="60" y="160" width="10" height="10" rx="2" fill="#FF6347" transform="rotate(75 65 165)"/>
+  <rect x="440" y="180" width="10" height="10" rx="2" fill="#9370DB" transform="rotate(15 445 185)"/>
+  <rect x="90" y="200" width="8" height="8" rx="2" fill="#FF69B4" transform="rotate(90 94 204)"/>
+  <rect x="430" y="220" width="8" height="8" rx="2" fill="#32CD32" transform="rotate(45 434 224)"/>
+  
+  <!-- More confetti -->
+  <circle cx="70" cy="100" r="4" fill="#FF1493"/>
+  <circle cx="450" cy="110" r="3" fill="#00BFFF"/>
+  <circle cx="50" cy="140" r="5" fill="#FFD700"/>
+  <circle cx="460" cy="160" r="4" fill="#FF6347"/>
+  <circle cx="80" cy="180" r="3" fill="#9370DB"/>
+  <circle cx="440" cy="200" r="5" fill="#32CD32"/>
+  
+  <!-- Party streamers -->
+  <path d="M 30 200 Q 60 180 90 200 Q 120 220 150 200" stroke="#FF69B4" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M 362 200 Q 392 220 422 200 Q 452 180 482 200" stroke="#9370DB" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M 200 50 Q 220 80 240 50 Q 260 20 280 50" stroke="#32CD32" stroke-width="6" fill="none" stroke-linecap="round"/>
+  
+  <!-- Celebration text effects -->
+  <g transform="translate(150, 450)">
+    <path d="M 0 -15 L 4.5 -4.5 L 15 -4.5 L 7.5 1.5 L 12 12 L 0 6 L -12 12 L -7.5 1.5 L -15 -4.5 L -4.5 -4.5 Z" fill="#FFD700"/>
+  </g>
+  
+  <g transform="translate(362, 460)">
+    <path d="M 0 -15 L 4.5 -4.5 L 15 -4.5 L 7.5 1.5 L 12 12 L 0 6 L -12 12 L -7.5 1.5 L -15 -4.5 L -4.5 -4.5 Z" fill="#FF1493"/>
+  </g>
+  
+  <!-- Sparkle effects -->
+  <path d="M 320 120 L 330 130 L 320 140 L 310 130 Z" fill="#FFD700"/>
+  <path d="M 180 100 L 190 110 L 180 120 L 170 110 Z" fill="#FF1493"/>
+  <path d="M 350 350 L 360 360 L 350 370 L 340 360 Z" fill="#32CD32"/>
+  <path d="M 160 380 L 170 390 L 160 400 L 150 390 Z" fill="#00BFFF"/>
+</svg>

@@ -1,0 +1,33 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#FFD700" stroke="#FFA500" stroke-width="8"/>
+  
+  <!-- Dollar sign eyes -->
+  <circle cx="180" cy="200" r="35" fill="#228B22"/>
+  <circle cx="332" cy="200" r="35" fill="#228B22"/>
+  
+  <!-- Dollar signs -->
+  <text x="165" y="215" font-family="Arial, sans-serif" font-size="40" font-weight="bold" fill="white">$</text>
+  <text x="317" y="215" font-family="Arial, sans-serif" font-size="40" font-weight="bold" fill="white">$</text>
+  
+  <!-- Excited mouth -->
+  <path d="M 180 320 Q 256 380 332 320" stroke="#333" stroke-width="8" fill="none" stroke-linecap="round"/>
+  
+  <!-- Money floating around -->
+  <rect x="80" y="120" width="40" height="25" rx="3" fill="#228B22" stroke="#006400" stroke-width="2"/>
+  <text x="92" y="138" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white">$</text>
+  
+  <rect x="400" y="150" width="40" height="25" rx="3" fill="#228B22" stroke="#006400" stroke-width="2"/>
+  <text x="412" y="168" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white">$</text>
+  
+  <rect x="100" y="380" width="40" height="25" rx="3" fill="#228B22" stroke="#006400" stroke-width="2"/>
+  <text x="112" y="398" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white">$</text>
+  
+  <rect x="380" y="350" width="40" height="25" rx="3" fill="#228B22" stroke="#006400" stroke-width="2"/>
+  <text x="392" y="368" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white">$</text>
+  
+  <!-- Money sparkles -->
+  <circle cx="130" cy="180" r="4" fill="#FFD700"/>
+  <circle cx="390" cy="280" r="4" fill="#FFD700"/>
+  <path d="M 350 100 L 360 110 L 350 120 L 340 110 Z" fill="#FFD700"/>
+</svg>

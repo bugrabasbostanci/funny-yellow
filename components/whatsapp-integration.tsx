@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { WhatsAppStickerService, type StickerPack } from "@/lib/whatsapp-integration";
+import { DownloadService } from "@/lib/download-service";
 import { MessageCircle, Download, Package, ExternalLink } from "lucide-react";
 
 interface Sticker {
@@ -61,9 +62,9 @@ export function WhatsAppIntegration({
     }
   };
 
-  const handleDownloadPack = () => {
+  const handleDownloadPack = async () => {
     if (createdPack) {
-      WhatsAppStickerService.downloadStickerPack(createdPack);
+      await DownloadService.downloadStickerPack(stickers);
     }
   };
 

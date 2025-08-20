@@ -1,0 +1,21 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#FFD700" stroke="#FFA500" stroke-width="8"/>
+  
+  <!-- Heart eyes -->
+  <path d="M 180 180 C 160 160, 130 160, 130 190 C 130 220, 180 240, 180 240 C 180 240, 230 220, 230 190 C 230 160, 200 160, 180 180 Z" fill="#FF1493"/>
+  <path d="M 332 180 C 312 160, 282 160, 282 190 C 282 220, 332 240, 332 240 C 332 240, 382 220, 382 190 C 382 160, 352 160, 332 180 Z" fill="#FF1493"/>
+  
+  <!-- Heart sparkles -->
+  <circle cx="140" cy="160" r="3" fill="#FFB6C1"/>
+  <circle cx="220" cy="150" r="2" fill="#FFB6C1"/>
+  <circle cx="290" cy="150" r="2" fill="#FFB6C1"/>
+  <circle cx="370" cy="160" r="3" fill="#FFB6C1"/>
+  
+  <!-- Mouth -->
+  <ellipse cx="256" cy="340" rx="30" ry="20" fill="#333"/>
+  
+  <!-- Floating hearts -->
+  <path d="M 100 120 C 90 110, 75 110, 75 125 C 75 140, 100 150, 100 150 C 100 150, 125 140, 125 125 C 125 110, 110 110, 100 120 Z" fill="#FF69B4" opacity="0.7"/>
+  <path d="M 420 350 C 415 345, 405 345, 405 355 C 405 365, 420 375, 420 375 C 420 375, 435 365, 435 355 C 435 345, 425 345, 420 350 Z" fill="#FF69B4" opacity="0.7"/>
+</svg>

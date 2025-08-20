@@ -1,0 +1,37 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Pizza slice base -->
+  <path d="M 256 100 L 100 400 L 412 400 Z" fill="#FFD700" stroke="#FFA500" stroke-width="6"/>
+  
+  <!-- Pizza crust -->
+  <path d="M 100 400 Q 256 380 412 400 Q 380 420 256 420 Q 132 420 100 400 Z" fill="#D2691E" stroke="#A0522D" stroke-width="4"/>
+  
+  <!-- Cheese base -->
+  <path d="M 256 120 L 120 380 L 392 380 Z" fill="#FFFF99"/>
+  
+  <!-- Pepperoni -->
+  <circle cx="200" cy="220" r="20" fill="#DC143C" stroke="#8B0000" stroke-width="2"/>
+  <circle cx="320" cy="250" r="18" fill="#DC143C" stroke="#8B0000" stroke-width="2"/>
+  <circle cx="180" cy="300" r="22" fill="#DC143C" stroke="#8B0000" stroke-width="2"/>
+  <circle cx="340" cy="320" r="19" fill="#DC143C" stroke="#8B0000" stroke-width="2"/>
+  <circle cx="280" cy="180" r="17" fill="#DC143C" stroke="#8B0000" stroke-width="2"/>
+  
+  <!-- Mushrooms -->
+  <ellipse cx="240" cy="280" rx="15" ry="12" fill="#8B4513"/>
+  <ellipse cx="300" cy="200" rx="12" ry="10" fill="#8B4513"/>
+  <ellipse cx="220" cy="350" rx="14" ry="11" fill="#8B4513"/>
+  
+  <!-- Green peppers -->
+  <ellipse cx="350" cy="280" rx="8" ry="15" fill="#228B22"/>
+  <ellipse cx="160" cy="260" rx="10" ry="12" fill="#228B22"/>
+  <ellipse cx="260" cy="340" rx="9" ry="14" fill="#228B22"/>
+  
+  <!-- Cheese strings -->
+  <path d="M 280 160 Q 290 170 300 180 Q 310 190 320 200" stroke="#FFFF99" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M 200 200 Q 210 220 220 240 Q 230 260 240 280" stroke="#FFFF99" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M 340 260 Q 350 280 360 300 Q 370 320 380 340" stroke="#FFFF99" stroke-width="3" fill="none" stroke-linecap="round"/>
+  
+  <!-- Steam lines -->
+  <path d="M 200 140 Q 205 120 200 100 Q 195 120 200 140" stroke="#DDD" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.8"/>
+  <path d="M 256 130 Q 261 110 256 90 Q 251 110 256 130" stroke="#DDD" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.8"/>
+  <path d="M 312 140 Q 317 120 312 100 Q 307 120 312 140" stroke="#DDD" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.8"/>
+</svg>

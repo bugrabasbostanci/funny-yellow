@@ -1,0 +1,25 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#FFD700" stroke="#FFA500" stroke-width="8"/>
+  
+  <!-- Wide shocked eyes -->
+  <circle cx="180" cy="200" r="35" fill="white" stroke="#333" stroke-width="4"/>
+  <circle cx="332" cy="200" r="35" fill="white" stroke="#333" stroke-width="4"/>
+  <circle cx="180" cy="200" r="18" fill="#333"/>
+  <circle cx="332" cy="200" r="18" fill="#333"/>
+  
+  <!-- Shocked mouth (oval) -->
+  <ellipse cx="256" cy="340" rx="25" ry="40" fill="#333"/>
+  
+  <!-- Shock lines around face -->
+  <path d="M 80 180 L 120 200 L 80 220" stroke="#333" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M 432 180 L 392 200 L 432 220" stroke="#333" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M 200 80 L 220 120 L 240 80" stroke="#333" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M 272 80 L 292 120 L 312 80" stroke="#333" stroke-width="4" fill="none" stroke-linecap="round"/>
+  
+  <!-- Additional shock effects -->
+  <circle cx="400" cy="150" r="4" fill="#FFD700"/>
+  <circle cx="112" cy="150" r="4" fill="#FFD700"/>
+  <circle cx="360" cy="400" r="3" fill="#FFD700"/>
+  <circle cx="152" cy="400" r="3" fill="#FFD700"/>
+</svg>

@@ -1,0 +1,47 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Space background -->
+  <rect width="512" height="512" fill="#191970"/>
+  
+  <!-- Stars in background -->
+  <circle cx="100" cy="100" r="2" fill="white"/>
+  <circle cx="450" cy="80" r="1" fill="white"/>
+  <circle cx="80" cy="200" r="1" fill="white"/>
+  <circle cx="420" cy="150" r="2" fill="white"/>
+  <circle cx="60" cy="400" r="1" fill="white"/>
+  <circle cx="480" cy="380" r="2" fill="white"/>
+  
+  <!-- Rocket body -->
+  <ellipse cx="256" cy="200" rx="40" ry="120" fill="#C0C0C0" stroke="#808080" stroke-width="4"/>
+  
+  <!-- Rocket nose cone -->
+  <path d="M 256 80 L 216 140 L 296 140 Z" fill="#FF4500" stroke="#DC143C" stroke-width="4"/>
+  
+  <!-- Rocket window -->
+  <circle cx="256" cy="160" r="25" fill="#00BFFF" stroke="#4169E1" stroke-width="3"/>
+  <circle cx="256" cy="160" r="18" fill="#87CEEB"/>
+  
+  <!-- Rocket fins -->
+  <path d="M 216 280 L 180 340 L 216 320 Z" fill="#FF6347" stroke="#DC143C" stroke-width="3"/>
+  <path d="M 296 280 L 332 340 L 296 320 Z" fill="#FF6347" stroke="#DC143C" stroke-width="3"/>
+  
+  <!-- Rocket exhaust/flames -->
+  <ellipse cx="256" cy="340" rx="30" ry="40" fill="#FFD700"/>
+  <ellipse cx="256" cy="360" rx="25" ry="50" fill="#FF8C00"/>
+  <ellipse cx="256" cy="380" rx="20" ry="60" fill="#FF4500"/>
+  <ellipse cx="256" cy="400" rx="15" ry="40" fill="#DC143C"/>
+  
+  <!-- Rocket details -->
+  <rect x="240" y="200" width="32" height="8" rx="4" fill="#808080"/>
+  <rect x="240" y="220" width="32" height="8" rx="4" fill="#808080"/>
+  <rect x="240" y="240" width="32" height="8" rx="4" fill="#808080"/>
+  
+  <!-- Motion lines/exhaust trail -->
+  <path d="M 200 450 Q 230 420 220 390 Q 250 410 240 380" stroke="#FFD700" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.8"/>
+  <path d="M 312 450 Q 282 420 292 390 Q 262 410 272 380" stroke="#FFD700" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.8"/>
+  <path d="M 256 470 Q 256 440 256 410" stroke="#FF8C00" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.8"/>
+  
+  <!-- Sparkle effects -->
+  <path d="M 320 120 L 330 130 L 320 140 L 310 130 Z" fill="#FFD700"/>
+  <path d="M 180 350 L 185 355 L 180 360 L 175 355 Z" fill="white"/>
+  <circle cx="350" cy="300" r="3" fill="#FFD700"/>
+</svg>

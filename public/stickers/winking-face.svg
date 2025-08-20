@@ -1,0 +1,19 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#FFD700" stroke="#FFA500" stroke-width="8"/>
+  
+  <!-- Right eye (open) -->
+  <circle cx="332" cy="200" r="20" fill="#333"/>
+  
+  <!-- Left eye (winking) -->
+  <path d="M 160 190 Q 180 180 200 190 Q 180 210 160 190" fill="#333"/>
+  
+  <!-- Mouth -->
+  <path d="M 200 320 Q 256 360 312 320" stroke="#333" stroke-width="6" fill="none" stroke-linecap="round"/>
+  
+  <!-- Wink sparkles -->
+  <circle cx="140" cy="160" r="3" fill="#FFD700"/>
+  <circle cx="220" cy="150" r="2" fill="#FFD700"/>
+  <path d="M 130 200 L 140 210 L 130 220 L 120 210 Z" fill="#FFD700"/>
+  <path d="M 240 170 L 245 175 L 240 180 L 235 175 Z" fill="#FFD700"/>
+</svg>

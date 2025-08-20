@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import Image from "next/image";
+import { OptimizedImage } from "./optimized-image";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Heart, Download, Eye, MessageCircle } from "lucide-react";
 import { useState } from "react";
-import { WhatsAppStickerService } from "@/lib/whatsapp-integration";
+import { DownloadService } from "@/lib/download-service";
 import { useAuth } from "@/lib/auth-context";
 
 interface StickerCardProps {
@@ -61,14 +61,10 @@ export function StickerCard({
     setIsDownloading(true);
 
     try {
-      // Regular download as PNG
-      const link = document.createElement("a");
-      link.href = imageUrl || "/placeholder.svg";
-      link.download = `${name.replace(/\s+/g, "_")}_sticker.png`;
-      link.target = "_blank";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      await DownloadService.downloadSticker(
+        { id, name, imageUrl: imageUrl || "/placeholder.svg" },
+        'png'
+      );
 
       if (user) {
         addToDownloadHistory(id);
@@ -87,10 +83,10 @@ export function StickerCard({
     setIsDownloading(true);
 
     try {
-      await WhatsAppStickerService.downloadSingleSticker({
-        name,
-        imageUrl,
-      });
+      await DownloadService.downloadSticker(
+        { id, name, imageUrl: imageUrl || "/placeholder.svg" },
+        'webp'
+      );
 
       if (user) {
         addToDownloadHistory(id);
@@ -114,15 +110,22 @@ export function StickerCard({
       >
         {/* Sticker Image */}
         <div className="aspect-square relative bg-gradient-to-br from-yellow-50 to-orange-50 p-4">
-          <Image
-            src={imageUrl || "/placeholder.svg"}
-            alt={name}
-            fill
-            className={`object-contain transition-transform duration-300 ${
-              isHovered ? "scale-110" : "scale-100"
-            }`}
-            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-          />
+          <div className="relative w-full h-full">
+            <OptimizedImage
+              src={imageUrl || "/placeholder.svg"}
+              alt={`${name} sticker - ${category}`}
+              fill
+              className={`object-contain transition-transform duration-300 ${
+                isHovered ? "scale-110" : "scale-100"
+              }`}
+              sizes="(max-width: 640px) 50vw, (max-width: 1200px) 33vw, 25vw"
+              priority={false}
+              quality={80} // Slightly lower quality for grid view
+              onError={() => {
+                console.warn(`Failed to load sticker image: ${name}`);
+              }}
+            />
+          </div>
 
           {/* Hover Overlay */}
           <div
@@ -198,13 +201,17 @@ export function StickerCard({
           </DialogHeader>
           <div className="space-y-4">
             <div className="aspect-square bg-gradient-to-br from-yellow-50 to-orange-50 rounded-lg p-8 relative">
-              <Image
-                src={imageUrl || "/placeholder.svg"}
-                alt={name}
-                fill
-                className="object-contain"
-                sizes="400px"
-              />
+              <div className="relative w-full h-full">
+                <OptimizedImage
+                  src={imageUrl || "/placeholder.svg"}
+                  alt={`${name} sticker preview - ${category}`}
+                  fill
+                  className="object-contain"
+                  sizes="400px"
+                  priority={true} // Priority for modal images
+                  quality={95} // Higher quality for preview
+                />
+              </div>
             </div>
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>Category: {category}</span>

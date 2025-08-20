@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+# Specific crawlers
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Sitemap
+Sitemap: https://funnyyellow.com/sitemap.xml
+
+# Crawl-delay for politeness
+Crawl-delay: 1

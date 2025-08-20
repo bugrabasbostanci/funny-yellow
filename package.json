@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "convert-stickers": "node scripts/convert-stickers.js",
+    "optimize-stickers": "node scripts/optimize-stickers.js",
     "upload-stickers": "node scripts/upload-to-supabase-admin.js",
     "setup-db": "node scripts/setup-database.js",
     "type-check": "tsc --noEmit",

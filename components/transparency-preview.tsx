@@ -58,12 +58,6 @@ export function TransparencyPreview({
   const [showGrid, setShowGrid] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  useEffect(() => {
-    if (showAnalysis) {
-      analyzeTransparency();
-    }
-  }, [imageUrl, showAnalysis, analyzeTransparency]);
-
   const analyzeTransparency = useCallback(async () => {
     setIsAnalyzing(true);
     
@@ -134,6 +128,12 @@ export function TransparencyPreview({
       console.error('Transparency analysis failed:', error);
     }
   }, [imageUrl]);
+
+  useEffect(() => {
+    if (showAnalysis) {
+      analyzeTransparency();
+    }
+  }, [imageUrl, showAnalysis, analyzeTransparency]);
 
   const getBackgroundClassName = (backgroundValue: string) => {
     if (backgroundValue === 'checkerboard') {

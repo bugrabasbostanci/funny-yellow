@@ -15,8 +15,8 @@ const outputDir = path.join(__dirname, '../public/stickers/webp');
 // Optimization settings
 const SETTINGS = {
   targetSize: 512,
-  maxFileSizeKB: 100,
-  qualityLevels: [95, 85, 75, 65, 50], // Try these quality levels to achieve target size
+  maxFileSizeKB: 200, // Increased for better quality
+  qualityLevels: [95, 90, 85, 80, 75], // Higher minimum quality for better results
   supportedFormats: ['.svg', '.png', '.jpg', '.jpeg', '.webp', '.gif']
 };
 
@@ -47,6 +47,11 @@ async function optimizeSticker(inputPath, outputPath) {
     console.log(`   📐 Original: ${info.width}x${info.height} (${info.format})`);
     console.log(`   🎨 Has transparency: ${info.hasAlpha ? 'Yes' : 'No'}`);
     
+    // Note: Background removal should be done manually using remove.bg before placing files in source/
+    // This ensures transparency is already handled and we only need to optimize
+    console.log(`   💡 Expecting pre-processed images (background already removed)`);
+    const processedImageBuffer = await fs.promises.readFile(inputPath);
+    
     // Determine resize strategy based on aspect ratio
     const aspectRatio = info.width / info.height;
     let resizeOptions;
@@ -73,12 +78,7 @@ async function optimizeSticker(inputPath, outputPath) {
     // Try different quality levels to achieve target file size
     for (const quality of SETTINGS.qualityLevels) {
       try {
-        let pipeline = sharp(inputPath);
-        
-        // Handle SVG with higher density for better quality
-        if (info.format === 'svg') {
-          pipeline = sharp(inputPath, { density: 300 });
-        }
+        let pipeline = sharp(processedImageBuffer);
         
         const buffer = await pipeline
           .resize(resizeOptions)

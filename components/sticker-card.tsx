@@ -12,10 +12,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Heart, Download, Eye, MessageCircle } from "lucide-react";
-import { useState } from "react";
+import { Heart, Download, Eye, MessageCircle, Info } from "lucide-react";
+import { useState, useEffect } from "react";
 import { DownloadService } from "@/lib/download-service";
 import { useAuth } from "@/lib/auth-context";
+import { PlatformDetection, type PlatformInfo } from "@/lib/platform-detection";
 
 interface StickerCardProps {
   id: string;
@@ -43,7 +44,13 @@ export function StickerCard({
   const [isHovered, setIsHovered] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showFormatOptions, setShowFormatOptions] = useState(false);
+  const [platformInfo, setPlatformInfo] = useState<PlatformInfo | null>(null);
   const { user, addToDownloadHistory } = useAuth();
+
+  useEffect(() => {
+    setPlatformInfo(PlatformDetection.getPlatformInfo());
+  }, []);
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -56,14 +63,24 @@ export function StickerCard({
     onPreview?.(id);
   };
 
-  const handleDownload = async (e: React.MouseEvent) => {
+  const handleSmartDownload = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    const format = platformInfo?.recommendedFormat || 'png';
+    await downloadSticker(format);
+  };
+
+  const handleFormatDownload = async (e: React.MouseEvent, format: 'png' | 'webp') => {
+    e.stopPropagation();
+    await downloadSticker(format);
+  };
+
+  const downloadSticker = async (format: 'png' | 'webp') => {
     setIsDownloading(true);
 
     try {
       await DownloadService.downloadSticker(
         { id, name, imageUrl: imageUrl || "/placeholder.svg" },
-        'png'
+        format
       );
 
       if (user) {
@@ -78,26 +95,9 @@ export function StickerCard({
     setIsDownloading(false);
   };
 
-  const handleWhatsAppDownload = async (e: React.MouseEvent) => {
+  const toggleFormatOptions = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsDownloading(true);
-
-    try {
-      await DownloadService.downloadSticker(
-        { id, name, imageUrl: imageUrl || "/placeholder.svg" },
-        'webp'
-      );
-
-      if (user) {
-        addToDownloadHistory(id);
-      }
-
-      onDownload?.(id);
-    } catch (error) {
-      console.error("Error downloading sticker:", error);
-    }
-
-    setIsDownloading(false);
+    setShowFormatOptions(!showFormatOptions);
   };
 
   return (
@@ -109,7 +109,7 @@ export function StickerCard({
         onClick={handlePreview}
       >
         {/* Sticker Image */}
-        <div className="aspect-square relative bg-gradient-to-br from-yellow-50 to-orange-50 p-4">
+        <div className="aspect-square relative bg-white/80 backdrop-blur-sm border border-yellow-200/20 shadow-sm p-4">
           <div className="relative w-full h-full">
             <OptimizedImage
               src={imageUrl || "/placeholder.svg"}
@@ -155,24 +155,58 @@ export function StickerCard({
             >
               <Heart className={`w-4 h-4 ${isLiked ? "fill-current" : ""}`} />
             </Button>
-            <Button
-              size="sm"
-              className="bg-success hover:bg-success/90 text-success-foreground shadow-sm"
-              onClick={handleWhatsAppDownload}
-              disabled={isDownloading}
-              title="Download for WhatsApp (WebP)"
-            >
-              <MessageCircle className="w-4 h-4" />
-            </Button>
-            <Button
-              size="sm"
-              className="bg-primary hover:bg-primary/90 shadow-sm"
-              onClick={handleDownload}
-              disabled={isDownloading}
-              title="Download sticker (PNG)"
-            >
-              <Download className="w-4 h-4" />
-            </Button>
+            {showFormatOptions ? (
+              <>
+                <Button
+                  size="sm"
+                  className="bg-success hover:bg-success/90 text-success-foreground shadow-sm"
+                  onClick={(e) => handleFormatDownload(e, 'webp')}
+                  disabled={isDownloading}
+                  title="Download as WebP (smaller file)"
+                >
+                  WebP
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                  onClick={(e) => handleFormatDownload(e, 'png')}
+                  disabled={isDownloading}
+                  title="Download as PNG (better compatibility)"
+                >
+                  PNG
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="bg-white/90 hover:bg-white shadow-sm"
+                  onClick={toggleFormatOptions}
+                  title="Close format options"
+                >
+                  ✕
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  size="sm"
+                  className="bg-primary hover:bg-primary/90 shadow-sm"
+                  onClick={handleSmartDownload}
+                  disabled={isDownloading}
+                  title={platformInfo ? `Download (${platformInfo.recommendedFormat.toUpperCase()}) - ${PlatformDetection.getFormatRecommendation().reason}` : "Download sticker"}
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="bg-white/90 hover:bg-white shadow-sm"
+                  onClick={toggleFormatOptions}
+                  title="Choose format"
+                >
+                  <Info className="w-4 h-4" />
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -188,9 +222,14 @@ export function StickerCard({
             <span>{downloadCount.toLocaleString()} downloads</span>
             <div className="flex items-center gap-1">
               <MessageCircle className="w-3 h-3 text-success" />
-              <span>WhatsApp</span>
+              <span>{platformInfo?.isWhatsAppWeb ? 'WhatsApp Web' : 'WhatsApp'}</span>
             </div>
           </div>
+          {platformInfo && (
+            <div className="text-xs text-muted-foreground mt-1 truncate">
+              Optimized for {PlatformDetection.getPlatformDescription()}
+            </div>
+          )}
         </div>
       </Card>
 
@@ -200,7 +239,7 @@ export function StickerCard({
             <DialogTitle className="font-display">{name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="aspect-square bg-gradient-to-br from-yellow-50 to-orange-50 rounded-lg p-8 relative">
+            <div className="aspect-square bg-white/80 backdrop-blur-sm border border-yellow-200/20 shadow-sm rounded-lg p-8 relative">
               <div className="relative w-full h-full">
                 <OptimizedImage
                   src={imageUrl || "/placeholder.svg"}
@@ -217,24 +256,33 @@ export function StickerCard({
               <span>Category: {category}</span>
               <span>{downloadCount.toLocaleString()} downloads</span>
             </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={handleWhatsAppDownload}
-                disabled={isDownloading}
-                className="flex-1 bg-success hover:bg-success/90 text-success-foreground"
-              >
-                <MessageCircle className="w-4 h-4 mr-2" />
-                WhatsApp
-              </Button>
-              <Button
-                onClick={handleDownload}
-                disabled={isDownloading}
-                variant="outline"
-                className="flex-1 bg-transparent"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Download
-              </Button>
+            <div className="space-y-3">
+              {platformInfo && (
+                <div className="text-sm text-muted-foreground p-2 bg-muted rounded">
+                  <strong>{PlatformDetection.getPlatformDescription()}</strong>
+                  <br />
+                  {PlatformDetection.getDownloadInstructions()}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleSmartDownload}
+                  disabled={isDownloading}
+                  className="flex-1 bg-primary hover:bg-primary/90"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  {platformInfo?.recommendedFormat.toUpperCase() || 'Download'}
+                </Button>
+                <Button
+                  onClick={(e) => handleFormatDownload(e, platformInfo?.recommendedFormat === 'png' ? 'webp' : 'png')}
+                  disabled={isDownloading}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  {platformInfo?.recommendedFormat === 'png' ? 'WebP' : 'PNG'}
+                </Button>
+              </div>
             </div>
           </div>
         </DialogContent>

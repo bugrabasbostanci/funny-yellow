@@ -401,6 +401,7 @@ export function StickerGallery() {
                 }
                 imageUrl={sticker.file_url}
                 downloadCount={sticker.download_count}
+                tags={sticker.tags || []}
                 onDownload={handleDownload}
                 onPreview={handlePreview}
                 selectionMode={selectionMode}

@@ -171,7 +171,7 @@ async function uploadSticker(filePath, fileName) {
         file_format: 'webp',
         width: 512,
         height: 512,
-        download_count: Math.floor(Math.random() * 10000) + 1000
+        download_count: 0 // Start with 0 downloads
       };
 
       const { data: dbData, error: dbError } = await supabaseAdmin

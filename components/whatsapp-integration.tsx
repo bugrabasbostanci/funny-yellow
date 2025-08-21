@@ -2,6 +2,7 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import { MessageCircle } from "lucide-react";
 import { WhatsAppStickerService } from "@/lib/whatsapp-integration";
 import { useState } from "react";
@@ -47,10 +48,12 @@ export function WhatsAppIntegration({ stickers, isOpen, onClose }: WhatsAppInteg
           <div className="grid grid-cols-4 gap-2 max-h-32 overflow-y-auto">
             {stickers.slice(0, 8).map((sticker) => (
               <div key={sticker.id} className="aspect-square bg-background rounded border">
-                <img 
+                <Image 
                   src={sticker.imageUrl} 
                   alt={sticker.name}
-                  className="w-full h-full object-contain p-1"
+                  fill
+                  className="object-contain p-1"
+                  sizes="(max-width: 768px) 25vw, 12.5vw"
                 />
               </div>
             ))}

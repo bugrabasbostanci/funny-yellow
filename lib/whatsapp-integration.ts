@@ -272,7 +272,17 @@ Publisher: ${stickerPack.publisher}`;
       return new Promise((resolve, reject) => {
         img.onload = () => {
           if (ctx) {
-            ctx.drawImage(img, 0, 0, 512, 512);
+            // Calculate scaling to maintain aspect ratio
+            const scale = Math.min(512 / img.width, 512 / img.height);
+            const scaledWidth = img.width * scale;
+            const scaledHeight = img.height * scale;
+            const x = (512 - scaledWidth) / 2;
+            const y = (512 - scaledHeight) / 2;
+            
+            // Clear canvas with transparent background
+            ctx.clearRect(0, 0, 512, 512);
+            ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+            
             canvas.toBlob(
               (blob) => {
                 if (blob) {

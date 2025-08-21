@@ -1,6 +1,7 @@
 "use client";
 
 import type React from "react";
+import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +19,7 @@ interface StickerCardProps {
   category: string;
   imageUrl: string;
   downloadCount: number;
+  tags?: string[];
   // Selection mode props
   selectionMode?: boolean;
   isSelected?: boolean;
@@ -32,6 +34,7 @@ export function StickerCard({
   category,
   imageUrl,
   downloadCount,
+  tags,
   selectionMode = false,
   isSelected = false,
   onSelectionChange,
@@ -41,7 +44,7 @@ export function StickerCard({
   const [isHovered, setIsHovered] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-
+  const [showAllTags, setShowAllTags] = useState(false);
 
   const handlePreview = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -62,28 +65,30 @@ export function StickerCard({
 
     try {
       const url = imageUrl || "/placeholder.svg";
-      
+
       // Try to fetch the image first to handle CORS
       const response = await fetch(url, {
-        mode: 'cors',
-        credentials: 'omit'
+        mode: "cors",
+        credentials: "omit",
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch: ${response.status}`);
       }
-      
+
       const blob = await response.blob();
-      
+
       // Create download link with blob URL
       const blobUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = blobUrl;
-      link.download = `${name.replace(/\s+/g, "_")}_sticker.${url.split('.').pop()?.toLowerCase() || 'png'}`;
+      link.download = `${name.replace(/\s+/g, "_")}_sticker.${
+        url.split(".").pop()?.toLowerCase() || "png"
+      }`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       // Clean up blob URL
       URL.revokeObjectURL(blobUrl);
 
@@ -92,7 +97,7 @@ export function StickerCard({
       console.error("Error downloading sticker:", error);
       // Fallback: open in new tab if download fails
       try {
-        window.open(imageUrl, '_blank');
+        window.open(imageUrl, "_blank");
       } catch (fallbackError) {
         console.error("Fallback download also failed:", fallbackError);
       }
@@ -101,12 +106,13 @@ export function StickerCard({
     setIsDownloading(false);
   };
 
-
   return (
     <>
       <div
         className={`group relative cursor-pointer ${
-          selectionMode && isSelected ? 'ring-2 ring-primary ring-offset-2' : ''
+          selectionMode && isSelected
+            ? "ring-2 ring-primary ring-offset-2 rounded-md"
+            : ""
         }`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -117,22 +123,24 @@ export function StickerCard({
           {/* Selection checkbox */}
           {selectionMode && (
             <div className="absolute top-2 right-2 z-10">
-              <div 
+              <div
                 className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
-                  isSelected 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-white border border-gray-300'
+                  isSelected
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-white border border-gray-300"
                 }`}
               >
                 {isSelected && <Check className="w-4 h-4" />}
               </div>
             </div>
           )}
-          
-          <img
+
+          <Image
             src={imageUrl || "/placeholder.svg"}
             alt={name}
-            className="w-full h-full object-contain transition-transform duration-200 group-hover:scale-105"
+            fill
+            className="object-contain transition-transform duration-200 group-hover:scale-105"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
 
           {/* Hover Actions - Only show in normal mode */}
@@ -166,22 +174,9 @@ export function StickerCard({
 
         {/* Minimal Info */}
         <div className="mt-2 px-1">
-          <p className="text-sm font-medium text-foreground truncate leading-tight">
+          <p className="text-sm font-medium text-foreground truncate leading-tight text-center">
             {name}
           </p>
-          <div className="flex items-center justify-between mt-1">
-            <p className="text-xs text-muted-foreground">
-              {downloadCount > 1000
-                ? `${(downloadCount / 1000).toFixed(1)}k`
-                : downloadCount.toLocaleString()}{" "}
-              downloads
-            </p>
-            {downloadCount > 20000 && (
-              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
-                🔥 Trending
-              </span>
-            )}
-          </div>
         </div>
       </div>
 
@@ -193,22 +188,59 @@ export function StickerCard({
           </DialogHeader>
           <div className="space-y-4">
             <div className="aspect-square bg-transparent border border-border/10 rounded-xl p-8">
-              <img
+              <Image
                 src={imageUrl || "/placeholder.svg"}
                 alt={name}
-                className="w-full h-full object-contain"
+                fill
+                className="object-contain"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />
             </div>
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>Category: {category}</span>
-              <div className="flex items-center gap-2">
-                <span>{downloadCount.toLocaleString()} downloads</span>
-                {downloadCount > 20000 && (
-                  <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">
-                    🔥 Trending
-                  </span>
-                )}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>Category: {category}</span>
+                <div className="flex items-center gap-2">
+                  <span>{downloadCount.toLocaleString()} downloads</span>
+                  {downloadCount > 20000 && (
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">
+                      🔥 Trending
+                    </span>
+                  )}
+                </div>
               </div>
+
+              {/* Tags */}
+              {tags && tags.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground font-medium">
+                      Tags:
+                    </span>
+                    {tags.length > 4 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs h-6 px-2 text-muted-foreground hover:text-foreground"
+                        onClick={() => setShowAllTags(!showAllTags)}
+                      >
+                        {showAllTags ? "Show Less" : `+${tags.length - 4} more`}
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {(showAllTags ? tags : tags.slice(0, 4)).map(
+                      (tag, index) => (
+                        <span
+                          key={index}
+                          className="text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded-md"
+                        >
+                          {tag}
+                        </span>
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="space-y-3">
               <Button

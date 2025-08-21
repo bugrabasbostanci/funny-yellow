@@ -4,11 +4,15 @@ import { useState, useMemo, useEffect } from "react";
 import { StickerCard } from "./sticker-card";
 import { CategoryFilter } from "./category-filter";
 import { HowToGuide } from "./how-to-guide";
+import { BulkDownloadBar } from "./bulk-download-bar";
+import { WhatsAppIntegration } from "./whatsapp-integration";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Search, Square, CheckSquare, Grid3X3, Grid2X2, LayoutGrid, MessageCircle } from "lucide-react";
 import { DatabaseService } from "@/lib/database-service";
 import { type Database } from "@/lib/supabase";
+import { type StickerForDownload } from "@/lib/bulk-download-utils";
 
 // Use Supabase database types
 type StickerData = Database['public']['Tables']['stickers']['Row'];
@@ -20,6 +24,8 @@ type CategoryData = {
   icon: string;
 };
 
+type StickerSize = "small" | "medium" | "large";
+
 export function StickerGallery() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -27,6 +33,12 @@ export function StickerGallery() {
   const [categories, setCategories] = useState<CategoryData[]>([]);
   const [loading, setLoading] = useState(true);
   const [usingFallbackData, setUsingFallbackData] = useState(false);
+  
+  // Bulk download state
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedStickers, setSelectedStickers] = useState<Set<string>>(new Set());
+  const [stickerSize, setStickerSize] = useState<StickerSize>("medium");
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
 
   // Load stickers and categories on component mount
   useEffect(() => {
@@ -101,9 +113,93 @@ export function StickerGallery() {
     // Preview functionality - could be used for analytics later
   };
 
-  // Simple grid layout for MVP
-  const gridClasses =
-    "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5";
+  // Bulk download handlers
+  const toggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+    setSelectedStickers(new Set()); // Clear selection when toggling
+  };
+
+  const handleStickerSelection = (stickerId: string, selected: boolean) => {
+    setSelectedStickers(prev => {
+      const newSet = new Set(prev);
+      if (selected) {
+        newSet.add(stickerId);
+      } else {
+        newSet.delete(stickerId);
+      }
+      return newSet;
+    });
+  };
+
+  const clearSelection = () => {
+    setSelectedStickers(new Set());
+    setSelectionMode(false);
+  };
+
+  const selectAllStickers = () => {
+    const allFilteredStickerIds = new Set(filteredStickers.map(sticker => sticker.id));
+    setSelectedStickers(allFilteredStickerIds);
+  };
+
+  const deselectAllStickers = () => {
+    setSelectedStickers(new Set());
+  };
+
+  const isAllSelected = filteredStickers.length > 0 && filteredStickers.every(sticker => selectedStickers.has(sticker.id));
+
+  const deselectSticker = (stickerId: string) => {
+    setSelectedStickers(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(stickerId);
+      return newSet;
+    });
+  };
+
+
+  const getGridClasses = () => {
+    switch (stickerSize) {
+      case "small":
+        return "grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-3";
+      case "medium":
+        return "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-4";
+      case "large":
+        return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6";
+      default:
+        return "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-4";
+    }
+  };
+
+  const handleCreateWhatsAppPack = () => {
+    const selectedStickersArray = stickers.filter((sticker) =>
+      selectedStickers.has(sticker.id)
+    ).map(sticker => ({
+      id: sticker.id,
+      name: sticker.name,
+      category: categories.find(cat => cat.id === sticker.category)?.name || sticker.category,
+      imageUrl: sticker.file_url,
+    }));
+
+    if (selectedStickersArray.length === 0) {
+      return;
+    }
+
+    setShowWhatsAppModal(true);
+  };
+
+  // Get selected stickers data for bulk download
+  const selectedStickersData: StickerForDownload[] = useMemo(() => {
+    return stickers
+      .filter(sticker => selectedStickers.has(sticker.id))
+      .map(sticker => ({
+        id: sticker.id,
+        name: sticker.name,
+        category: categories.find(cat => cat.id === sticker.category)?.name || sticker.category,
+        imageUrl: sticker.file_url,
+      }));
+  }, [stickers, selectedStickers, categories]);
+
+  // Grid layout with size controls
+  const gridClasses = getGridClasses();
 
   if (loading) {
     return (
@@ -145,6 +241,58 @@ export function StickerGallery() {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2 mt-4 sm:mt-0">
+            {selectedStickers.size > 0 && selectionMode && (
+              <Button
+                onClick={handleCreateWhatsAppPack}
+                className="bg-success text-success-foreground hover:bg-success/90"
+                size="sm"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Create Pack ({selectedStickers.size})
+              </Button>
+            )}
+            
+            <Button
+              variant={selectionMode ? "default" : "outline"}
+              size="sm"
+              onClick={toggleSelectionMode}
+              className={`flex items-center gap-2 ${!selectionMode ? 'bg-success hover:bg-success/90 text-success-foreground border-success' : ''}`}
+            >
+              {selectionMode ? (
+                <>
+                  <CheckSquare className="w-4 h-4" />
+                  <span className="hidden sm:inline">Exit Select</span>
+                </>
+              ) : (
+                <>
+                  <Square className="w-4 h-4" />
+                  <span className="hidden sm:inline">Create Pack</span>
+                </>
+              )}
+            </Button>
+            
+            {/* Select All/Deselect All - only show in selection mode */}
+            {selectionMode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={isAllSelected ? deselectAllStickers : selectAllStickers}
+                className="flex items-center gap-2"
+              >
+                {isAllSelected ? (
+                  <>
+                    <Square className="w-4 h-4" />
+                    <span className="hidden sm:inline">Deselect All</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckSquare className="w-4 h-4" />
+                    <span className="hidden sm:inline">Select All</span>
+                  </>
+                )}
+              </Button>
+            )}
+            
             <HowToGuide />
           </div>
         </div>
@@ -168,28 +316,75 @@ export function StickerGallery() {
           onCategoryChange={setSelectedCategory}
         />
 
-        {/* Results Info */}
+        {/* Results Info and Size Controls */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-sm text-muted-foreground">
-            Showing {filteredStickers.length} sticker
-            {filteredStickers.length !== 1 ? "s" : ""}
-            {selectedCategory !== "all" && (
-              <span>
-                {" "}
-                in{" "}
-                <span className="font-medium">
-                  {categories.find((cat) => cat.id === selectedCategory)?.name}
-                </span>
+            {selectionMode ? (
+              <span className="flex items-center gap-2 flex-wrap">
+                <Badge variant="secondary" className="bg-primary/10 text-primary">
+                  {selectedStickers.size} of {filteredStickers.length} selected
+                </Badge>
+                {selectedCategory !== "all" && (
+                  <span className="text-muted-foreground">
+                    from{" "}
+                    <span className="font-medium">
+                      {categories.find((cat) => cat.id === selectedCategory)?.name}
+                    </span>
+                  </span>
+                )}
+                {selectedStickers.size > 0 && (
+                  <span className="text-xs text-success font-medium">
+                    Ready to download!
+                  </span>
+                )}
               </span>
-            )}
-            {searchQuery && (
-              <span>
-                {" "}
-                for &ldquo;<span className="font-medium">{searchQuery}</span>
-                &rdquo;
-              </span>
+            ) : (
+              <>
+                {filteredStickers.length} sticker
+                {filteredStickers.length !== 1 ? "s" : ""}
+                {selectedCategory !== "all" && (
+                  <span className="hidden sm:inline">
+                    {" "}
+                    in{" "}
+                    <span className="font-medium">
+                      {categories.find((cat) => cat.id === selectedCategory)?.name}
+                    </span>
+                  </span>
+                )}
+              </>
             )}
           </p>
+
+          {/* Size Control Buttons */}
+          <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
+            <Button
+              variant={stickerSize === "small" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setStickerSize("small")}
+              className="h-8 w-8 p-0"
+              title="Small size"
+            >
+              <Grid3X3 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={stickerSize === "medium" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setStickerSize("medium")}
+              className="h-8 w-8 p-0"
+              title="Medium size"
+            >
+              <Grid2X2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={stickerSize === "large" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setStickerSize("large")}
+              className="h-8 w-8 p-0"
+              title="Large size"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Sticker Grid */}
@@ -208,6 +403,9 @@ export function StickerGallery() {
                 downloadCount={sticker.download_count}
                 onDownload={handleDownload}
                 onPreview={handlePreview}
+                selectionMode={selectionMode}
+                isSelected={selectedStickers.has(sticker.id)}
+                onSelectionChange={handleStickerSelection}
               />
             ))}
           </div>
@@ -279,6 +477,25 @@ export function StickerGallery() {
             />
           </div>
         </div>
+
+        {/* Bulk Download Bar */}
+        <BulkDownloadBar
+          selectedStickers={selectedStickersData}
+          onClearSelection={clearSelection}
+          onDeselectSticker={deselectSticker}
+        />
+
+        {/* WhatsApp Integration Modal */}
+        <WhatsAppIntegration
+          stickers={stickers.filter(sticker => selectedStickers.has(sticker.id)).map(sticker => ({
+            id: sticker.id,
+            name: sticker.name,
+            category: categories.find(cat => cat.id === sticker.category)?.name || sticker.category,
+            imageUrl: sticker.file_url,
+          }))}
+          isOpen={showWhatsAppModal}
+          onClose={() => setShowWhatsAppModal(false)}
+        />
 
       </div>
     </section>

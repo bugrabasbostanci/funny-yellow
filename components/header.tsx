@@ -2,22 +2,28 @@
 
 import { Button } from "@/components/ui/button";
 import { Github, Heart } from "lucide-react";
+import Image from "next/image";
 
 export function Header() {
-
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo and Title */}
           <div className="flex items-center space-x-3">
-            <div className="text-3xl animate-bounce">😄</div>
+            <Image
+              src="/funny-yellow-logo.svg"
+              alt="Funny Yellow Logo"
+              width={64}
+              height={64}
+              className="w-16 h-16 transition-transform duration-200 hover:scale-110"
+            />
             <div className="flex flex-col">
               <h1 className="text-xl font-bold text-primary font-display tracking-tight">
                 Funny Yellow
               </h1>
               <p className="text-xs text-muted-foreground hidden sm:block font-medium">
-                Free WhatsApp Stickers
+                Free Stickers
               </p>
             </div>
           </div>
@@ -40,12 +46,17 @@ export function Header() {
               variant="ghost"
               size="sm"
               className="hidden sm:flex items-center space-x-2 text-muted-foreground hover:text-foreground"
-              onClick={() => window.open('https://github.com/bugrabasbostanci/funny-yellow', '_blank')}
+              onClick={() =>
+                window.open(
+                  "https://github.com/bugrabasbostanci/funny-yellow",
+                  "_blank"
+                )
+              }
             >
               <Github className="h-4 w-4" />
               <span>GitHub</span>
             </Button>
-            
+
             <Button
               variant="outline"
               size="sm"

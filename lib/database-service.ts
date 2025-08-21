@@ -6,7 +6,6 @@ type StickerInsert = Database["public"]["Tables"]["stickers"]["Insert"];
 export class DatabaseService {
   // Fetch all stickers with optional filtering
   static async getStickers(options?: {
-    category?: string;
     search?: string;
     limit?: number;
     offset?: number;
@@ -16,13 +15,9 @@ export class DatabaseService {
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (options?.category && options.category !== "all") {
-      query = query.eq("category", options.category);
-    }
-
     if (options?.search) {
       query = query.or(
-        `name.ilike.%${options.search}%,tags.cs.{${options.search}}`
+        `name.ilike.%${options.search}%,tags.cs.{${options.search}},category.ilike.%${options.search}%`
       );
     }
 
@@ -63,38 +58,31 @@ export class DatabaseService {
     return data;
   }
 
-  // Get sticker categories with counts
-  static async getCategories() {
+  // Get popular tags for search suggestions
+  static async getPopularTags() {
     const { data, error } = await supabase
       .from("stickers")
-      .select("category")
-      .order("category");
+      .select("tags");
 
     if (error) {
-      console.error("Error fetching categories:", error);
+      console.error("Error fetching tags:", error);
       return [];
     }
 
-    // Count stickers per category
-    const categoryCounts = data.reduce((acc, sticker) => {
-      acc[sticker.category] = (acc[sticker.category] || 0) + 1;
+    // Flatten and count all tags
+    const tagCounts = data.reduce((acc, sticker) => {
+      if (sticker.tags) {
+        sticker.tags.forEach((tag: string) => {
+          acc[tag] = (acc[tag] || 0) + 1;
+        });
+      }
       return acc;
     }, {} as Record<string, number>);
 
-    // Map to the format expected by the UI
-    const categoryMap: Record<string, string> = {
-      emotions: "Emotions",
-      reactions: "Reactions",
-      gestures: "Gestures",
-      characters: "Characters",
-    };
-
-    return Object.entries(categoryCounts).map(([id, count]) => ({
-      id,
-      name: categoryMap[id] || id,
-      count,
-      icon: "",
-    }));
+    // Return sorted by popularity (most used first)
+    return Object.entries(tagCounts)
+      .sort(([, a], [, b]) => b - a)
+      .map(([tag, count]) => ({ tag, count }));
   }
 
   // Track a download

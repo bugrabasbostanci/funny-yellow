@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Download, Eye, Check } from "lucide-react";
 import { useState } from "react";
+import { SimplePlatformDetection } from "@/lib/simple-platform-detection";
 
 interface StickerCardProps {
   id: string;
@@ -82,9 +83,9 @@ export function StickerCard({
       const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = blobUrl;
-      link.download = `${name.replace(/\s+/g, "_")}_sticker.${
-        url.split(".").pop()?.toLowerCase() || "png"
-      }`;
+      // Use platform detection to determine file format
+      const recommendedFormat = SimplePlatformDetection.getRecommendedFormat();
+      link.download = `${name.replace(/\s+/g, "_")}_sticker.${recommendedFormat}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

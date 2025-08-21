@@ -13,11 +13,12 @@ export interface StickerPack {
 export interface Sticker {
   imageFile: string;
   emojis: string[];
+  name?: string;
 }
 
 export class WhatsAppStickerService {
   static async createStickerPack(
-    stickers: { id: string; name: string; category: string; imageUrl: string }[],
+    stickers: { id: string; name: string; category?: string; imageUrl: string }[],
     packName: string
   ): Promise<StickerPack> {
     // Limit to 30 stickers as per WhatsApp requirements
@@ -34,7 +35,8 @@ export class WhatsAppStickerService {
       licenseAgreementWebsite: "https://funnyyellow.com/terms",
       stickers: limitedStickers.map((sticker) => ({
         imageFile: sticker.imageUrl,
-        emojis: this.getCategoryEmojis(sticker.category),
+        emojis: this.getCategoryEmojis(sticker.category || "default"),
+        name: sticker.name,
       })),
     };
 
@@ -43,18 +45,22 @@ export class WhatsAppStickerService {
 
   static getCategoryEmojis(category: string): string[] {
     const emojiMap: Record<string, string[]> = {
-      // Actual categories from the database
+      // Legacy categories
       emotions: ["😊", "😢", "😡", "😴", "😍", "🥰"],
       reactions: ["👍", "👎", "😮", "😱", "👏", "🙌"],
       gestures: ["👋", "🤝", "👌", "✌️", "🤟", "🙏"],
       characters: ["👨", "👩", "🧑", "👶", "🧓", "👸"],
+      // Common tag-based emojis
+      funny: ["😂", "🤣", "😆", "😄", "😁", "😊"],
+      cute: ["🥰", "😍", "😊", "🤗", "😇", "🥺"],
+      love: ["❤️", "💕", "💖", "😍", "🥰", "💘"],
+      sad: ["😢", "😭", "😔", "☹️", "😞", "💔"],
+      angry: ["😡", "😤", "🤬", "😠", "👿", "💢"],
+      happy: ["😊", "😄", "😁", "🙂", "😃", "😀"],
       // Default fallback
-      Emotions: ["😊", "😢", "😡", "😴", "😍", "🥰"],
-      Reactions: ["👍", "👎", "😮", "😱", "👏", "🙌"], 
-      Gestures: ["👋", "🤝", "👌", "✌️", "🤟", "🙏"],
-      Characters: ["👨", "👩", "🧑", "👶", "🧓", "👸"],
+      default: ["😊", "👍", "😄", "🎉", "✨", "💫"]
     };
-    return emojiMap[category] || ["😊", "👍"];
+    return emojiMap[category.toLowerCase()] || emojiMap.default;
   }
 
   static async convertToWebP(blob: Blob, name: string): Promise<Blob> {
@@ -180,82 +186,69 @@ export class WhatsAppStickerService {
     }
   }
 
+  static sanitizeFileName(name: string): string {
+    // Replace spaces and special characters with underscores, keep only safe characters
+    return name
+      .replace(/[^a-zA-Z0-9\s\-_.]/g, '') // Remove unsafe characters
+      .replace(/\s+/g, '_') // Replace spaces with underscores
+      .replace(/_{2,}/g, '_') // Replace multiple underscores with single
+      .replace(/^_+|_+$/g, '') // Remove leading/trailing underscores
+      .toLowerCase()
+      .slice(0, 50); // Limit length to 50 characters
+  }
+
   static async downloadStickerPack(stickerPack: StickerPack): Promise<void> {
-    // Instead of JSON, we'll download stickers as WebP files in a ZIP
-    // Users can then manually add these to WhatsApp using the app
-    const JSZip = (await import('jszip')).default;
-    const zip = new JSZip();
-    
-    // Add pack info file
-    const packInfo = `WhatsApp Sticker Pack: ${stickerPack.name}
-Created: ${new Date().toLocaleDateString()}
-Stickers: ${stickerPack.stickers.length}
-
-How to add to WhatsApp:
-1. Save all WebP files to your phone
-2. Open WhatsApp
-3. Go to any chat
-4. Tap the sticker icon
-5. Tap the + icon
-6. Select the WebP files you want to add
-
-Publisher: ${stickerPack.publisher}`;
-    
-    zip.file('README.txt', packInfo);
-    
+    // Download stickers individually as WebP files for WhatsApp
     let completed = 0;
     const total = stickerPack.stickers.length;
     
-    // Download and convert each sticker to WebP
-    const downloadPromises = stickerPack.stickers.map(async (sticker, index) => {
+    // Process each sticker sequentially to avoid overwhelming the browser
+    for (let index = 0; index < stickerPack.stickers.length; index++) {
+      const sticker = stickerPack.stickers[index];
+      
       try {
         const response = await fetch(sticker.imageFile, {
           mode: 'cors',
           credentials: 'omit'
         });
-        if (!response.ok) throw new Error(`Failed to fetch sticker ${index + 1}: ${response.status}`);
-        
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch sticker ${index + 1}`);
+        }
+
         const blob = await response.blob();
+        const webpBlob = await this.convertBlobToWebPDirect(blob, sticker.name || `sticker_${index + 1}`);
         
-        // Direct canvas conversion without blob URL
-        const webpBlob = await this.convertBlobToWebPDirect(blob, `sticker_${index + 1}`);
+        // Download individual WebP file with sticker name
+        const fileName = sticker.name 
+          ? `${this.sanitizeFileName(sticker.name)}.webp`
+          : `whatsapp_sticker_${(index + 1).toString().padStart(3, '0')}.webp`;
         
-        zip.file(`sticker_${String(index + 1).padStart(2, '0')}.webp`, webpBlob);
+        const url = URL.createObjectURL(webpBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
         
         completed++;
-        window.dispatchEvent(new CustomEvent('whatsappPackProgress', {
-          detail: { completed, total, current: `Sticker ${index + 1}` }
-        }));
+        
+        // Dispatch progress event
+        const progressEvent = new CustomEvent('whatsappPackProgress', {
+          detail: { completed, total, current: `sticker_${index + 1}.webp` }
+        });
+        window.dispatchEvent(progressEvent);
+        
+        // Small delay between downloads to avoid browser throttling
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
       } catch (error) {
         console.error(`Error processing sticker ${index + 1}:`, error);
-        completed++; // Count as completed to not block progress
-        
-        // Add original file instead if conversion fails
-        try {
-          const response = await fetch(sticker.imageFile);
-          if (response.ok) {
-            const originalBlob = await response.blob();
-            zip.file(`original_sticker_${String(index + 1).padStart(2, '0')}.${this.getFileExtension(sticker.imageFile)}`, originalBlob);
-          }
-        } catch (fallbackError) {
-          zip.file(`error_sticker_${index + 1}.txt`, `Failed to process: ${error}\\nFallback error: ${fallbackError}`);
-        }
+        // Continue with other stickers even if one fails
       }
-    });
-    
-    await Promise.all(downloadPromises);
-    
-    // Generate and download ZIP
-    const content = await zip.generateAsync({ type: 'blob' });
-    const url = URL.createObjectURL(content);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${stickerPack.name.replace(/[^a-zA-Z0-9]/g, '_')}_WhatsApp_Stickers.zip`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    }
   }
 
   static async downloadSingleSticker(sticker: { name: string; imageUrl: string }): Promise<void> {

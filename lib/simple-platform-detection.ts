@@ -15,9 +15,13 @@ export const SimplePlatformDetection = {
     return SimplePlatformDetection.isMobile() ? 'webp' : 'png';
   },
 
+  getPlatformName: (): string => {
+    return SimplePlatformDetection.isMobile() ? 'Mobile' : 'Desktop';
+  },
+
   getFormatDescription: (): string => {
     const format = SimplePlatformDetection.getRecommendedFormat();
-    const platform = SimplePlatformDetection.isMobile() ? 'Mobile' : 'Desktop';
+    const platform = SimplePlatformDetection.getPlatformName();
     
     return `${format.toUpperCase()} for ${platform}`;
   }

@@ -2,20 +2,23 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { StickerCard } from "./sticker-card";
-import { CategoryFilter } from "./category-filter";
-import { HowToGuide } from "./how-to-guide";
-import { BulkDownloadBar } from "./bulk-download-bar";
-import { WhatsAppIntegration } from "./whatsapp-integration";
+import { DownloadOptionsModal } from "./download-options-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Square, CheckSquare, Grid3X3, Grid2X2, LayoutGrid, MessageCircle } from "lucide-react";
+import {
+  Search,
+  Grid3X3,
+  Grid2X2,
+  LayoutGrid,
+  X,
+} from "lucide-react";
 import { DatabaseService } from "@/lib/database-service";
 import { type Database } from "@/lib/supabase";
 import { type StickerForDownload } from "@/lib/bulk-download-utils";
 
 // Use Supabase database types
-type StickerData = Database['public']['Tables']['stickers']['Row'];
+type StickerData = Database["public"]["Tables"]["stickers"]["Row"];
 
 type CategoryData = {
   id: string;
@@ -33,12 +36,14 @@ export function StickerGallery() {
   const [categories, setCategories] = useState<CategoryData[]>([]);
   const [loading, setLoading] = useState(true);
   const [usingFallbackData, setUsingFallbackData] = useState(false);
-  
+
   // Bulk download state
   const [selectionMode, setSelectionMode] = useState(false);
-  const [selectedStickers, setSelectedStickers] = useState<Set<string>>(new Set());
+  const [selectedStickers, setSelectedStickers] = useState<Set<string>>(
+    new Set()
+  );
   const [stickerSize, setStickerSize] = useState<StickerSize>("medium");
-  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
 
   // Load stickers and categories on component mount
   useEffect(() => {
@@ -47,13 +52,8 @@ export function StickerGallery() {
         setLoading(true);
 
         // Fetch from database
-        const [stickersData, categoriesData] = await Promise.all([
-          DatabaseService.getStickers(),
-          DatabaseService.getCategories(),
-        ]);
-
+        const stickersData = await DatabaseService.getStickers();
         setStickers(stickersData);
-        setCategories(categoriesData);
         setUsingFallbackData(false);
       } catch {
         // If database fails, show error message
@@ -120,7 +120,7 @@ export function StickerGallery() {
   };
 
   const handleStickerSelection = (stickerId: string, selected: boolean) => {
-    setSelectedStickers(prev => {
+    setSelectedStickers((prev) => {
       const newSet = new Set(prev);
       if (selected) {
         newSet.add(stickerId);
@@ -131,13 +131,10 @@ export function StickerGallery() {
     });
   };
 
-  const clearSelection = () => {
-    setSelectedStickers(new Set());
-    setSelectionMode(false);
-  };
-
   const selectAllStickers = () => {
-    const allFilteredStickerIds = new Set(filteredStickers.map(sticker => sticker.id));
+    const allFilteredStickerIds = new Set(
+      filteredStickers.map((sticker) => sticker.id)
+    );
     setSelectedStickers(allFilteredStickerIds);
   };
 
@@ -145,16 +142,9 @@ export function StickerGallery() {
     setSelectedStickers(new Set());
   };
 
-  const isAllSelected = filteredStickers.length > 0 && filteredStickers.every(sticker => selectedStickers.has(sticker.id));
-
-  const deselectSticker = (stickerId: string) => {
-    setSelectedStickers(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(stickerId);
-      return newSet;
-    });
-  };
-
+  const isAllSelected =
+    filteredStickers.length > 0 &&
+    filteredStickers.every((sticker) => selectedStickers.has(sticker.id));
 
   const getGridClasses = () => {
     switch (stickerSize) {
@@ -169,34 +159,24 @@ export function StickerGallery() {
     }
   };
 
-  const handleCreateWhatsAppPack = () => {
-    const selectedStickersArray = stickers.filter((sticker) =>
-      selectedStickers.has(sticker.id)
-    ).map(sticker => ({
-      id: sticker.id,
-      name: sticker.name,
-      category: categories.find(cat => cat.id === sticker.category)?.name || sticker.category,
-      imageUrl: sticker.file_url,
-    }));
-
-    if (selectedStickersArray.length === 0) {
+  const handleCreatePack = () => {
+    if (selectedStickers.size === 0) {
       return;
     }
-
-    setShowWhatsAppModal(true);
+    setShowDownloadModal(true);
   };
 
   // Get selected stickers data for bulk download
   const selectedStickersData: StickerForDownload[] = useMemo(() => {
     return stickers
-      .filter(sticker => selectedStickers.has(sticker.id))
-      .map(sticker => ({
+      .filter((sticker) => selectedStickers.has(sticker.id))
+      .map((sticker) => ({
         id: sticker.id,
         name: sticker.name,
-        category: categories.find(cat => cat.id === sticker.category)?.name || sticker.category,
+        category: sticker.category,
         imageUrl: sticker.file_url,
       }));
-  }, [stickers, selectedStickers, categories]);
+  }, [stickers, selectedStickers]);
 
   // Grid layout with size controls
   const gridClasses = getGridClasses();
@@ -221,8 +201,9 @@ export function StickerGallery() {
         {usingFallbackData && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
             <p className="text-sm">
-              <strong>Connection Error:</strong> Unable to load stickers from database. 
-              Please check your connection and try refreshing the page.
+              <strong>Connection Error:</strong> Unable to load stickers from
+              database. Please check your connection and try refreshing the
+              page.
             </p>
           </div>
         )}
@@ -240,60 +221,47 @@ export function StickerGallery() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2 mt-4 sm:mt-0">
+          <div className="flex items-center gap-2 mt-4 sm:mt-0 flex-wrap">
             {selectedStickers.size > 0 && selectionMode && (
               <Button
-                onClick={handleCreateWhatsAppPack}
+                onClick={handleCreatePack}
                 className="bg-success text-success-foreground hover:bg-success/90"
                 size="sm"
               >
-                <MessageCircle className="w-4 h-4 mr-2" />
                 Create Pack ({selectedStickers.size})
               </Button>
             )}
-            
+
             <Button
               variant={selectionMode ? "default" : "outline"}
               size="sm"
               onClick={toggleSelectionMode}
-              className={`flex items-center gap-2 ${!selectionMode ? 'bg-success hover:bg-success/90 text-success-foreground border-success' : ''}`}
+              className={`${
+                !selectionMode
+                  ? "bg-success hover:bg-success/90 text-success-foreground border-success"
+                  : ""
+              }`}
             >
-              {selectionMode ? (
-                <>
-                  <CheckSquare className="w-4 h-4" />
-                  <span className="hidden sm:inline">Exit Select</span>
-                </>
-              ) : (
-                <>
-                  <Square className="w-4 h-4" />
-                  <span className="hidden sm:inline">Create Pack</span>
-                </>
-              )}
+              {selectionMode ? "Exit Select" : "Create Pack"}
             </Button>
-            
+
             {/* Select All/Deselect All - only show in selection mode */}
             {selectionMode && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={isAllSelected ? deselectAllStickers : selectAllStickers}
-                className="flex items-center gap-2"
+                onClick={
+                  isAllSelected ? deselectAllStickers : selectAllStickers
+                }
               >
-                {isAllSelected ? (
-                  <>
-                    <Square className="w-4 h-4" />
-                    <span className="hidden sm:inline">Deselect All</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckSquare className="w-4 h-4" />
-                    <span className="hidden sm:inline">Select All</span>
-                  </>
-                )}
+                <span className="hidden sm:inline">
+                  {isAllSelected ? "Deselect All" : "Select All"}
+                </span>
+                <span className="sm:hidden">
+                  {isAllSelected ? "Deselect" : "Select All"}
+                </span>
               </Button>
             )}
-            
-            <HowToGuide />
           </div>
         </div>
 
@@ -302,33 +270,41 @@ export function StickerGallery() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             type="text"
-            placeholder="Search stickers by name..."
+            placeholder="Search stickers by name and tags"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 pr-4 py-3 bg-secondary border-0 focus:ring-2 focus:ring-primary"
+            className="pl-10 pr-10 py-3 bg-secondary border-0 focus:ring-2 focus:ring-primary"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Clear search"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
-
-        {/* Category Filter */}
-        <CategoryFilter
-          categories={categories}
-          selectedCategory={selectedCategory}
-          onCategoryChange={setSelectedCategory}
-        />
 
         {/* Results Info and Size Controls */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-sm text-muted-foreground">
             {selectionMode ? (
               <span className="flex items-center gap-2 flex-wrap">
-                <Badge variant="secondary" className="bg-primary/10 text-primary">
+                <Badge
+                  variant="secondary"
+                  className="bg-primary/10 text-primary"
+                >
                   {selectedStickers.size} of {filteredStickers.length} selected
                 </Badge>
                 {selectedCategory !== "all" && (
                   <span className="text-muted-foreground">
                     from{" "}
                     <span className="font-medium">
-                      {categories.find((cat) => cat.id === selectedCategory)?.name}
+                      {
+                        categories.find((cat) => cat.id === selectedCategory)
+                          ?.name
+                      }
                     </span>
                   </span>
                 )}
@@ -347,7 +323,10 @@ export function StickerGallery() {
                     {" "}
                     in{" "}
                     <span className="font-medium">
-                      {categories.find((cat) => cat.id === selectedCategory)?.name}
+                      {
+                        categories.find((cat) => cat.id === selectedCategory)
+                          ?.name
+                      }
                     </span>
                   </span>
                 )}
@@ -438,66 +417,12 @@ export function StickerGallery() {
           </div>
         )}
 
-        {/* How To Add Guide Section - Static as per MVP docs */}
-        <div className="bg-yellow-100 p-6 mt-12 rounded-lg">
-          <h3 className="text-xl font-display font-bold mb-4 text-center">
-            📱 How to Add Stickers to WhatsApp?
-          </h3>
-
-          <div className="grid md:grid-cols-2 gap-6 mt-4">
-            <div className="bg-white/70 rounded-lg p-4">
-              <h4 className="font-semibold mb-3 flex items-center gap-2">
-                📱 Mobile (Android/iOS):
-              </h4>
-              <ol className="text-sm space-y-1 text-gray-700">
-                <li>1. Download any &quot;Sticker Maker&quot; app</li>
-                <li>2. Import downloaded stickers</li>
-                <li>3. Create pack & add to WhatsApp</li>
-              </ol>
-            </div>
-
-            <div className="bg-white/70 rounded-lg p-4">
-              <h4 className="font-semibold mb-3 flex items-center gap-2">
-                💻 Desktop/Web:
-              </h4>
-              <ol className="text-sm space-y-1 text-gray-700">
-                <li>1. Open any chat in WhatsApp</li>
-                <li>2. Click emoji icon → Sticker tab</li>
-                <li>3. Click + and select downloaded file</li>
-              </ol>
-            </div>
-          </div>
-
-          <div className="text-center mt-6">
-            <HowToGuide
-              trigger={
-                <Button className="bg-yellow-600 hover:bg-yellow-700 text-white">
-                  View Detailed Guide
-                </Button>
-              }
-            />
-          </div>
-        </div>
-
-        {/* Bulk Download Bar */}
-        <BulkDownloadBar
-          selectedStickers={selectedStickersData}
-          onClearSelection={clearSelection}
-          onDeselectSticker={deselectSticker}
+        {/* Download Options Modal */}
+        <DownloadOptionsModal
+          stickers={selectedStickersData}
+          isOpen={showDownloadModal}
+          onClose={() => setShowDownloadModal(false)}
         />
-
-        {/* WhatsApp Integration Modal */}
-        <WhatsAppIntegration
-          stickers={stickers.filter(sticker => selectedStickers.has(sticker.id)).map(sticker => ({
-            id: sticker.id,
-            name: sticker.name,
-            category: categories.find(cat => cat.id === sticker.category)?.name || sticker.category,
-            imageUrl: sticker.file_url,
-          }))}
-          isOpen={showWhatsAppModal}
-          onClose={() => setShowWhatsAppModal(false)}
-        />
-
       </div>
     </section>
   );

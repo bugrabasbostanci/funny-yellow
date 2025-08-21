@@ -187,7 +187,7 @@ export function StickerCard({
             <DialogTitle className="font-display">{name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="aspect-square bg-transparent border border-border/10 rounded-xl p-8">
+            <div className="aspect-square bg-transparent border border-border/10 rounded-xl p-8 relative">
               <Image
                 src={imageUrl || "/placeholder.svg"}
                 alt={name}

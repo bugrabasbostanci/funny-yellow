@@ -1,12 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { UserMenu } from "@/components/user-menu";
-import { Search, Heart, Download } from "lucide-react";
-import { useAuth } from "@/lib/auth-context";
+import { Search } from "lucide-react";
 
 export function Header() {
-  const { user } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -44,42 +41,6 @@ export function Header() {
             >
               <Search className="h-5 w-5" />
             </Button>
-
-            {user && (
-              <>
-                {/* Favorites */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="relative hover:bg-primary/10 hover:text-primary transition-colors"
-                >
-                  <Heart className="h-5 w-5" />
-                  {user.favorites.length > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium shadow-sm">
-                      {user.favorites.length}
-                    </span>
-                  )}
-                </Button>
-
-                {/* Downloads */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="relative hidden sm:flex hover:bg-primary/10 hover:text-primary transition-colors"
-                >
-                  <Download className="h-5 w-5" />
-                  {user.downloadHistory.length > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium shadow-sm">
-                      {user.downloadHistory.length}
-                    </span>
-                  )}
-                </Button>
-              </>
-            )}
-
-            <div className="ml-2">
-              <UserMenu />
-            </div>
           </div>
         </div>
       </div>

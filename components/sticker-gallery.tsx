@@ -3,115 +3,15 @@
 import { useState, useMemo, useEffect } from "react";
 import { StickerCard } from "./sticker-card";
 import { CategoryFilter } from "./category-filter";
-import { WhatsAppIntegration } from "./whatsapp-integration";
 import { HowToGuide } from "./how-to-guide";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, MessageCircle } from "lucide-react";
-import { useAuth } from "@/lib/auth-context";
+import { Search } from "lucide-react";
 import { DatabaseService } from "@/lib/database-service";
+import { type Database } from "@/lib/supabase";
 
-// Fallback mock data for when database is not available
-const mockStickers = [
-  {
-    id: "1",
-    name: "Happy Face",
-    category: "funny-emoji",
-    file_url: "/stickers/webp/happy-face.webp",
-    download_count: 15420,
-    tags: ["happy", "smile", "positive"],
-  },
-  {
-    id: "2",
-    name: "Thumbs Up",
-    category: "reactions",
-    file_url: "/stickers/webp/thumbs-up.webp",
-    download_count: 8930,
-    tags: ["good", "approval", "like"],
-  },
-  {
-    id: "3",
-    name: "Crying Laugh",
-    category: "memes",
-    file_url: "/stickers/webp/crying-laugh.webp",
-    download_count: 23150,
-    tags: ["funny", "lol", "tears"],
-  },
-  {
-    id: "4",
-    name: "Heart Eyes",
-    category: "expressions",
-    file_url: "/stickers/webp/heart-eyes.webp",
-    download_count: 12680,
-    tags: ["love", "heart", "crush"],
-  },
-  {
-    id: "5",
-    name: "Cute Cat",
-    category: "animals",
-    file_url: "/stickers/webp/cute-cat.webp",
-    download_count: 19240,
-    tags: ["cat", "cute", "pet"],
-  },
-  {
-    id: "6",
-    name: "Winking Face",
-    category: "funny-emoji",
-    file_url: "/stickers/webp/winking-face.webp",
-    download_count: 7850,
-    tags: ["wink", "flirt", "secret"],
-  },
-  {
-    id: "7",
-    name: "Angry Face",
-    category: "reactions",
-    file_url: "/stickers/webp/angry-face.webp",
-    download_count: 5420,
-    tags: ["angry", "mad", "rage"],
-  },
-  {
-    id: "8",
-    name: "Shocked Face",
-    category: "reactions",
-    file_url: "/stickers/webp/shocked-face.webp",
-    download_count: 31200,
-    tags: ["surprised", "wow", "shock"],
-  },
-  {
-    id: "9",
-    name: "Cool Sunglasses",
-    category: "expressions",
-    file_url: "/stickers/webp/cool-sunglasses.webp",
-    download_count: 14500,
-    tags: ["cool", "sunglasses", "awesome"],
-  },
-  {
-    id: "10",
-    name: "Party Hat",
-    category: "celebration",
-    file_url: "/stickers/webp/party-hat.webp",
-    download_count: 9800,
-    tags: ["party", "celebration", "fun"],
-  },
-];
-
-const mockCategories = [
-  { id: "funny-emoji", name: "Funny Emoji", count: 2, icon: "😄" },
-  { id: "reactions", name: "Reactions", count: 3, icon: "👍" },
-  { id: "memes", name: "Memes", count: 1, icon: "🤣" },
-  { id: "expressions", name: "Expressions", count: 2, icon: "😍" },
-  { id: "animals", name: "Animals", count: 1, icon: "🐱" },
-  { id: "celebration", name: "Celebration", count: 1, icon: "🎉" },
-];
-
-type StickerData = {
-  id: string;
-  name: string;
-  category: string;
-  file_url: string;
-  download_count: number;
-  tags?: string[];
-};
+// Use Supabase database types
+type StickerData = Database['public']['Tables']['stickers']['Row'];
 
 type CategoryData = {
   id: string;
@@ -120,33 +20,13 @@ type CategoryData = {
   icon: string;
 };
 
-// WhatsApp sticker format for integration
-type WhatsAppSticker = {
-  id: string;
-  name: string;
-  category: string;
-  imageUrl: string;
-  downloadCount: number;
-  isLiked: boolean;
-};
-
 export function StickerGallery() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [likedStickers, setLikedStickers] = useState<Set<string>>(
-    new Set() // Start with no liked stickers
-  );
-  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
-  const [selectedStickers, setSelectedStickers] = useState<WhatsAppSticker[]>(
-    []
-  );
   const [stickers, setStickers] = useState<StickerData[]>([]);
   const [categories, setCategories] = useState<CategoryData[]>([]);
   const [loading, setLoading] = useState(true);
   const [usingFallbackData, setUsingFallbackData] = useState(false);
-
-  const { user, addToFavorites, removeFromFavorites, addToDownloadHistory } =
-    useAuth();
 
   // Load stickers and categories on component mount
   useEffect(() => {
@@ -154,7 +34,7 @@ export function StickerGallery() {
       try {
         setLoading(true);
 
-        // Try to fetch from database
+        // Fetch from database
         const [stickersData, categoriesData] = await Promise.all([
           DatabaseService.getStickers(),
           DatabaseService.getCategories(),
@@ -163,11 +43,10 @@ export function StickerGallery() {
         setStickers(stickersData);
         setCategories(categoriesData);
         setUsingFallbackData(false);
-      } catch (error) {
-        console.warn("Database not available, using fallback data:", error);
-        // Use fallback mock data
-        setStickers(mockStickers);
-        setCategories(mockCategories);
+      } catch {
+        // If database fails, show error message
+        setStickers([]);
+        setCategories([]);
         setUsingFallbackData(true);
       } finally {
         setLoading(false);
@@ -203,77 +82,28 @@ export function StickerGallery() {
     return filtered;
   }, [stickers, selectedCategory, searchQuery]);
 
-  const handleLike = (stickerId: string) => {
-    if (likedStickers.has(stickerId)) {
-      if (user) removeFromFavorites(stickerId);
-      setLikedStickers((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(stickerId);
-        return newSet;
-      });
-    } else {
-      if (user) addToFavorites(stickerId);
-      setLikedStickers((prev) => new Set(prev).add(stickerId));
-    }
-  };
-
   const handleDownload = async (stickerId: string) => {
-    if (user) {
-      addToDownloadHistory(stickerId);
-    }
-
     // Track download in database if available
     if (!usingFallbackData) {
       try {
-        // Get user's IP address for tracking (in a real app, this would be done server-side)
         await DatabaseService.trackDownload(
           stickerId,
           "0.0.0.0",
           navigator.userAgent
         );
-      } catch (error) {
-        console.warn("Failed to track download:", error);
+      } catch {
+        // Silently fail - tracking is not critical for user experience
       }
     }
-
-    console.log("Downloading sticker:", stickerId);
   };
 
-  const handlePreview = (stickerId: string) => {
-    console.log("Previewing sticker:", stickerId);
-  };
-
-  const handleCreateWhatsAppPack = () => {
-    // Use current liked stickers for pack creation
-    const favoriteStickers = stickers.filter((sticker) =>
-      likedStickers.has(sticker.id)
-    );
-
-    if (favoriteStickers.length === 0) {
-      // Show message to add favorites first
-      return;
-    }
-
-    // Transform StickerData to WhatsApp Sticker format
-    const whatsappStickers = favoriteStickers.map((sticker) => ({
-      id: sticker.id,
-      name: sticker.name,
-      category: sticker.category,
-      imageUrl: sticker.file_url,
-      downloadCount: sticker.download_count,
-      isLiked: likedStickers.has(sticker.id), // Use dynamic liked state
-    }));
-
-    setSelectedStickers(whatsappStickers);
-    setShowWhatsAppModal(true);
+  const handlePreview = () => {
+    // Preview functionality - could be used for analytics later
   };
 
   // Simple grid layout for MVP
   const gridClasses =
     "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5";
-
-  // Use dynamic liked stickers count for accurate display
-  const favoriteCount = likedStickers.size;
 
   if (loading) {
     return (
@@ -291,12 +121,12 @@ export function StickerGallery() {
   return (
     <section className="py-8">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Database status indicator */}
+        {/* Database error indicator */}
         {usingFallbackData && (
-          <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-6">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
             <p className="text-sm">
-              <strong>Demo Mode:</strong> Using local sticker data. Database
-              integration available in production.
+              <strong>Connection Error:</strong> Unable to load stickers from database. 
+              Please check your connection and try refreshing the page.
             </p>
           </div>
         )}
@@ -316,17 +146,6 @@ export function StickerGallery() {
           {/* Action Buttons */}
           <div className="flex items-center gap-2 mt-4 sm:mt-0">
             <HowToGuide />
-
-            {favoriteCount > 0 && (
-              <Button
-                onClick={handleCreateWhatsAppPack}
-                className="bg-success text-success-foreground hover:bg-success/90"
-                size="sm"
-              >
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Create Pack ({favoriteCount})
-              </Button>
-            )}
           </div>
         </div>
 
@@ -387,12 +206,6 @@ export function StickerGallery() {
                 }
                 imageUrl={sticker.file_url}
                 downloadCount={sticker.download_count}
-                isLiked={
-                  user
-                    ? user.favorites.includes(sticker.id)
-                    : likedStickers.has(sticker.id)
-                }
-                onLike={handleLike}
                 onDownload={handleDownload}
                 onPreview={handlePreview}
               />
@@ -467,12 +280,6 @@ export function StickerGallery() {
           </div>
         </div>
 
-        {/* WhatsApp Integration Modal */}
-        <WhatsAppIntegration
-          stickers={selectedStickers}
-          isOpen={showWhatsAppModal}
-          onClose={() => setShowWhatsAppModal(false)}
-        />
       </div>
     </section>
   );

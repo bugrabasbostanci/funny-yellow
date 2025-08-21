@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { OptimizedImage } from "./optimized-image";
+import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,11 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Heart, Download, Eye, MessageCircle, Info } from "lucide-react";
+import { Download, Eye } from "lucide-react";
 import { useState, useEffect } from "react";
-import { DownloadService } from "@/lib/download-service";
-import { useAuth } from "@/lib/auth-context";
-import { PlatformDetection, type PlatformInfo } from "@/lib/platform-detection";
+import { SimplePlatformDetection } from "@/lib/simple-platform-detection";
 
 interface StickerCardProps {
   id: string;
@@ -24,8 +22,6 @@ interface StickerCardProps {
   category: string;
   imageUrl: string;
   downloadCount: number;
-  isLiked?: boolean;
-  onLike?: (id: string) => void;
   onDownload?: (id: string) => void;
   onPreview?: (id: string) => void;
 }
@@ -36,26 +32,17 @@ export function StickerCard({
   category,
   imageUrl,
   downloadCount,
-  isLiked = false,
-  onLike,
   onDownload,
   onPreview,
 }: StickerCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [showFormatOptions, setShowFormatOptions] = useState(false);
-  const [platformInfo, setPlatformInfo] = useState<PlatformInfo | null>(null);
-  const { user, addToDownloadHistory } = useAuth();
+  const [recommendedFormat, setRecommendedFormat] = useState<'webp' | 'png'>('webp');
 
   useEffect(() => {
-    setPlatformInfo(PlatformDetection.getPlatformInfo());
+    setRecommendedFormat(SimplePlatformDetection.getRecommendedFormat());
   }, []);
-
-  const handleLike = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onLike?.(id);
-  };
 
   const handlePreview = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -63,41 +50,64 @@ export function StickerCard({
     onPreview?.(id);
   };
 
-  const handleSmartDownload = async (e: React.MouseEvent) => {
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
-    const format = platformInfo?.recommendedFormat || 'png';
-    await downloadSticker(format);
-  };
-
-  const handleFormatDownload = async (e: React.MouseEvent, format: 'png' | 'webp') => {
-    e.stopPropagation();
-    await downloadSticker(format);
-  };
-
-  const downloadSticker = async (format: 'png' | 'webp') => {
     setIsDownloading(true);
 
     try {
-      await DownloadService.downloadSticker(
-        { id, name, imageUrl: imageUrl || "/placeholder.svg" },
-        format
-      );
-
-      if (user) {
-        addToDownloadHistory(id);
+      // Use platform-specific format
+      const format = recommendedFormat;
+      const url = imageUrl || "/placeholder.svg";
+      
+      // Handle Supabase storage URLs or local URLs
+      let formatUrl = url;
+      if (url.includes('supabase')) {
+        // For Supabase URLs, assume both formats exist in storage
+        formatUrl = url.replace(/\.(webp|png|jpg|jpeg)$/i, `.${format}`);
+      } else {
+        // For local URLs, simple replacement
+        formatUrl = url.replace('.webp', `.${format}`);
       }
+      
+      // Download via fetch to handle CORS properly
+      let response = await fetch(formatUrl);
+      
+      // If preferred format not found, try original format
+      if (!response.ok && formatUrl !== url) {
+        response = await fetch(url);
+      }
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch: ${response.status}`);
+      }
+      
+      const blob = await response.blob();
+      
+      // Use actual format from successful response
+      const actualFormat = formatUrl !== url && response.url === url 
+        ? url.split('.').pop()?.toLowerCase() || format
+        : format;
+      
+      // Create download link with blob URL
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `${name}.${actualFormat}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up blob URL
+      URL.revokeObjectURL(blobUrl);
 
       onDownload?.(id);
-    } catch (error) {
-      console.error("Error downloading sticker:", error);
+    } catch {
+      // Fallback: open in new tab if download fails
+      window.open(imageUrl, '_blank');
     }
 
     setIsDownloading(false);
-  };
-
-  const toggleFormatOptions = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowFormatOptions(!showFormatOptions);
   };
 
   return (
@@ -111,7 +121,7 @@ export function StickerCard({
         {/* Sticker Image */}
         <div className="aspect-square relative bg-white/80 backdrop-blur-sm border border-yellow-200/20 shadow-sm p-4">
           <div className="relative w-full h-full">
-            <OptimizedImage
+            <Image
               src={imageUrl || "/placeholder.svg"}
               alt={`${name} sticker - ${category}`}
               fill
@@ -119,11 +129,6 @@ export function StickerCard({
                 isHovered ? "scale-110" : "scale-100"
               }`}
               sizes="(max-width: 640px) 50vw, (max-width: 1200px) 33vw, 25vw"
-              priority={false}
-              quality={80} // Slightly lower quality for grid view
-              onError={() => {
-                console.warn(`Failed to load sticker image: ${name}`);
-              }}
             />
           </div>
 
@@ -144,69 +149,13 @@ export function StickerCard({
             </Button>
             <Button
               size="sm"
-              variant="secondary"
-              className={`bg-white/90 hover:bg-white shadow-sm transition-colors ${
-                isLiked
-                  ? "text-red-500 hover:text-red-600"
-                  : "hover:text-red-500"
-              }`}
-              onClick={handleLike}
-              title={isLiked ? "Unlike" : "Like"}
+              className="bg-primary hover:bg-primary/90 shadow-sm"
+              onClick={handleDownload}
+              disabled={isDownloading}
+              title="Download sticker"
             >
-              <Heart className={`w-4 h-4 ${isLiked ? "fill-current" : ""}`} />
+              <Download className="w-4 h-4" />
             </Button>
-            {showFormatOptions ? (
-              <>
-                <Button
-                  size="sm"
-                  className="bg-success hover:bg-success/90 text-success-foreground shadow-sm"
-                  onClick={(e) => handleFormatDownload(e, 'webp')}
-                  disabled={isDownloading}
-                  title="Download as WebP (smaller file)"
-                >
-                  WebP
-                </Button>
-                <Button
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
-                  onClick={(e) => handleFormatDownload(e, 'png')}
-                  disabled={isDownloading}
-                  title="Download as PNG (better compatibility)"
-                >
-                  PNG
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="bg-white/90 hover:bg-white shadow-sm"
-                  onClick={toggleFormatOptions}
-                  title="Close format options"
-                >
-                  ✕
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  size="sm"
-                  className="bg-primary hover:bg-primary/90 shadow-sm"
-                  onClick={handleSmartDownload}
-                  disabled={isDownloading}
-                  title={platformInfo ? `Download (${platformInfo.recommendedFormat.toUpperCase()}) - ${PlatformDetection.getFormatRecommendation().reason}` : "Download sticker"}
-                >
-                  <Download className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="bg-white/90 hover:bg-white shadow-sm"
-                  onClick={toggleFormatOptions}
-                  title="Choose format"
-                >
-                  <Info className="w-4 h-4" />
-                </Button>
-              </>
-            )}
           </div>
         </div>
 
@@ -220,16 +169,8 @@ export function StickerCard({
           </div>
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>{downloadCount.toLocaleString()} downloads</span>
-            <div className="flex items-center gap-1">
-              <MessageCircle className="w-3 h-3 text-success" />
-              <span>{platformInfo?.isWhatsAppWeb ? 'WhatsApp Web' : 'WhatsApp'}</span>
-            </div>
+            <span>{SimplePlatformDetection.getFormatDescription()}</span>
           </div>
-          {platformInfo && (
-            <div className="text-xs text-muted-foreground mt-1 truncate">
-              Optimized for {PlatformDetection.getPlatformDescription()}
-            </div>
-          )}
         </div>
       </Card>
 
@@ -241,14 +182,12 @@ export function StickerCard({
           <div className="space-y-4">
             <div className="aspect-square bg-white/80 backdrop-blur-sm border border-yellow-200/20 shadow-sm rounded-lg p-8 relative">
               <div className="relative w-full h-full">
-                <OptimizedImage
+                <Image
                   src={imageUrl || "/placeholder.svg"}
                   alt={`${name} sticker preview - ${category}`}
                   fill
                   className="object-contain"
                   sizes="400px"
-                  priority={true} // Priority for modal images
-                  quality={95} // Higher quality for preview
                 />
               </div>
             </div>
@@ -257,32 +196,14 @@ export function StickerCard({
               <span>{downloadCount.toLocaleString()} downloads</span>
             </div>
             <div className="space-y-3">
-              {platformInfo && (
-                <div className="text-sm text-muted-foreground p-2 bg-muted rounded">
-                  <strong>{PlatformDetection.getPlatformDescription()}</strong>
-                  <br />
-                  {PlatformDetection.getDownloadInstructions()}
-                </div>
-              )}
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleSmartDownload}
-                  disabled={isDownloading}
-                  className="flex-1 bg-primary hover:bg-primary/90"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  {platformInfo?.recommendedFormat.toUpperCase() || 'Download'}
-                </Button>
-                <Button
-                  onClick={(e) => handleFormatDownload(e, platformInfo?.recommendedFormat === 'png' ? 'webp' : 'png')}
-                  disabled={isDownloading}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  {platformInfo?.recommendedFormat === 'png' ? 'WebP' : 'PNG'}
-                </Button>
-              </div>
+              <Button
+                onClick={handleDownload}
+                disabled={isDownloading}
+                className="w-full bg-primary hover:bg-primary/90"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download {recommendedFormat.toUpperCase()}
+              </Button>
             </div>
           </div>
         </DialogContent>

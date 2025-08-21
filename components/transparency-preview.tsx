@@ -15,7 +15,7 @@ import {
   EyeOff,
   RotateCcw
 } from "lucide-react";
-import { OptimizedImage } from "./optimized-image";
+import Image from "next/image";
 
 interface TransparencyPreviewProps {
   imageUrl: string;
@@ -68,7 +68,7 @@ export function TransparencyPreview({
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      const img = new Image();
+      const img = new window.Image();
       img.crossOrigin = 'anonymous';
 
       img.onload = () => {
@@ -246,13 +246,12 @@ export function TransparencyPreview({
                   )}
                   
                   <div className="relative w-full h-full p-4">
-                    <OptimizedImage
+                    <Image
                       src={imageUrl}
                       alt={`${imageName} transparency preview`}
                       fill
                       className="object-contain"
                       sizes={`${size}px`}
-                      quality={95}
                     />
                   </div>
 

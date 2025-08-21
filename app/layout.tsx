@@ -2,8 +2,6 @@ import type React from "react";
 import type { Metadata } from "next";
 import { Inter, Fredoka } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/lib/auth-context";
-import { PerformanceMonitor } from "@/components/performance-monitor";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -24,14 +22,14 @@ export const metadata: Metadata = {
     "Make Chat Fun Again! 🎉 Download high-quality, funny stickers for WhatsApp instantly. 100% free sticker collection with easy WhatsApp integration.",
   keywords: [
     "WhatsApp stickers",
-    "free stickers", 
+    "free stickers",
     "funny stickers",
     "sticker packs",
     "WhatsApp sticker maker",
     "emoji stickers",
     "chat stickers",
     "instant download",
-    "webp stickers"
+    "webp stickers",
   ],
   authors: [{ name: "Funny Yellow Team" }],
   creator: "Funny Yellow",
@@ -39,7 +37,8 @@ export const metadata: Metadata = {
   category: "Entertainment",
   openGraph: {
     title: "Funny Yellow - Free WhatsApp Stickers",
-    description: "Download high-quality, funny stickers for WhatsApp instantly. 100% free sticker collection.",
+    description:
+      "Download high-quality, funny stickers for WhatsApp instantly. 100% free sticker collection.",
     url: "https://funnyyellow.com",
     siteName: "Funny Yellow",
     images: [
@@ -56,7 +55,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Funny Yellow - Free WhatsApp Stickers",
-    description: "Download high-quality, funny stickers for WhatsApp instantly. 100% free!",
+    description:
+      "Download high-quality, funny stickers for WhatsApp instantly. 100% free!",
     images: ["/twitter-image.png"],
   },
   robots: {
@@ -86,13 +86,7 @@ export default function RootLayout({
       className={`${inter.variable} ${fredoka.variable} antialiased`}
     >
       <body className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-50">
-        <AuthProvider>
-          {children}
-          <PerformanceMonitor 
-            enabled={process.env.NODE_ENV === 'development'} 
-            debug={process.env.NODE_ENV === 'development'} 
-          />
-        </AuthProvider>
+        {children}
       </body>
     </html>
   );

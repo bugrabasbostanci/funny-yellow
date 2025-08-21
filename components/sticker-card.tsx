@@ -40,6 +40,21 @@ export function StickerCard({
   const [showPreview, setShowPreview] = useState(false);
   const [recommendedFormat, setRecommendedFormat] = useState<'webp' | 'png'>('webp');
 
+  // Create a view-only URL by adding transform parameters
+  const getViewUrl = (url: string) => {
+    try {
+      // For Supabase storage URLs, add transform parameters to ensure inline viewing
+      if (url.includes('supabase.co/storage')) {
+        const urlObj = new URL(url);
+        urlObj.searchParams.set('t', Date.now().toString()); // Cache bust
+        return urlObj.toString();
+      }
+      return url;
+    } catch {
+      return url;
+    }
+  };
+
   useEffect(() => {
     setRecommendedFormat(SimplePlatformDetection.getRecommendedFormat());
   }, []);
@@ -183,11 +198,13 @@ export function StickerCard({
             <div className="aspect-square bg-white/80 backdrop-blur-sm border border-yellow-200/20 shadow-sm rounded-lg p-8 relative">
               <div className="relative w-full h-full">
                 <Image
-                  src={imageUrl || "/placeholder.svg"}
+                  src={getViewUrl(imageUrl) || "/placeholder.svg"}
                   alt={`${name} sticker preview - ${category}`}
                   fill
                   className="object-contain"
                   sizes="400px"
+                  unoptimized
+                  priority={false}
                 />
               </div>
             </div>

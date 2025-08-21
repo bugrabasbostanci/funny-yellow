@@ -92,7 +92,6 @@ export function CategoryFilter({
           onClick={() => onCategoryChange("all")}
           className="flex items-center gap-2 whitespace-nowrap flex-shrink-0 min-w-fit"
         >
-          <span>🎯</span>
           All Categories
           <Badge variant="secondary" className="ml-1">
             {categories.reduce((sum, cat) => sum + cat.count, 0)}
@@ -107,7 +106,6 @@ export function CategoryFilter({
             onClick={() => onCategoryChange(category.id)}
             className="flex items-center gap-2 whitespace-nowrap flex-shrink-0 min-w-fit"
           >
-            <span>{category.icon}</span>
             {category.name}
             <Badge variant="secondary" className="ml-1">
               {category.count}

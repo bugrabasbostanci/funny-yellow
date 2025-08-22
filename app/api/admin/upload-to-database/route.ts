@@ -22,16 +22,43 @@ function generateMetadata(fileName: string) {
     .replace(/[-_]/g, ' ')
     .replace(/\b\w/g, l => l.toUpperCase());
 
-  // Basic tag generation based on filename
-  const tags = ['emoji', 'reaction'];
+  // Smart tag generation based on filename keywords
+  const tags: string[] = [];
+  const lowerFileName = fileName.toLowerCase();
   
-  if (fileName.includes('happy') || fileName.includes('smile')) tags.push('happy');
-  if (fileName.includes('sad') || fileName.includes('cry')) tags.push('sad');
-  if (fileName.includes('angry') || fileName.includes('mad')) tags.push('angry');
-  if (fileName.includes('love') || fileName.includes('heart')) tags.push('love');
-  if (fileName.includes('funny') || fileName.includes('laugh')) tags.push('funny');
-  if (fileName.includes('animal') || fileName.includes('cat') || fileName.includes('dog')) tags.push('animals');
-  if (fileName.includes('food')) tags.push('food');
+  // Emotion-based tags
+  if (lowerFileName.includes('happy') || lowerFileName.includes('smile') || lowerFileName.includes('joy')) tags.push('happy');
+  if (lowerFileName.includes('sad') || lowerFileName.includes('cry') || lowerFileName.includes('tear')) tags.push('sad');
+  if (lowerFileName.includes('angry') || lowerFileName.includes('mad') || lowerFileName.includes('rage')) tags.push('angry');
+  if (lowerFileName.includes('love') || lowerFileName.includes('heart') || lowerFileName.includes('kiss')) tags.push('love');
+  if (lowerFileName.includes('funny') || lowerFileName.includes('laugh') || lowerFileName.includes('lol')) tags.push('funny');
+  
+  // Category-based tags
+  if (lowerFileName.includes('animal') || lowerFileName.includes('cat') || lowerFileName.includes('dog') || 
+      lowerFileName.includes('bird') || lowerFileName.includes('fish') || lowerFileName.includes('pet')) tags.push('animals');
+  if (lowerFileName.includes('food') || lowerFileName.includes('eat') || lowerFileName.includes('drink') || 
+      lowerFileName.includes('cake') || lowerFileName.includes('pizza')) tags.push('food');
+  if (lowerFileName.includes('party') || lowerFileName.includes('celebrate') || lowerFileName.includes('birthday')) tags.push('celebration');
+  if (lowerFileName.includes('cool') || lowerFileName.includes('awesome') || lowerFileName.includes('nice')) tags.push('cool');
+  if (lowerFileName.includes('nature') || lowerFileName.includes('flower') || lowerFileName.includes('tree')) tags.push('nature');
+  if (lowerFileName.includes('meme') || lowerFileName.includes('viral')) tags.push('memes');
+  
+  // Object-based tags
+  if (lowerFileName.includes('car') || lowerFileName.includes('phone') || lowerFileName.includes('computer') || 
+      lowerFileName.includes('book') || lowerFileName.includes('ball')) tags.push('objects');
+  
+  // Expression-based tags
+  if (lowerFileName.includes('shock') || lowerFileName.includes('surprise') || lowerFileName.includes('wow') ||
+      lowerFileName.includes('expression') || lowerFileName.includes('face')) tags.push('expressions');
+  
+  // Default fallback tags only if no specific tags found
+  if (tags.length === 0) {
+    // Check if it's likely an emoji-style sticker
+    if (lowerFileName.includes('emoji') || lowerFileName.includes('reaction') || 
+        lowerFileName.includes('face') || lowerFileName.includes('expression')) {
+      tags.push('emoji');
+    }
+  }
 
   return {
     name,

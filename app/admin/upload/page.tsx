@@ -115,12 +115,48 @@ export default function AdminUpload() {
     "cool",
   ];
 
+  const generateSmartTags = (fileName: string): string[] => {
+    const tags: string[] = [];
+    const lowerFileName = fileName.toLowerCase();
+    
+    // Emotion-based tags
+    if (lowerFileName.includes('happy') || lowerFileName.includes('smile') || lowerFileName.includes('joy')) tags.push('happy');
+    if (lowerFileName.includes('sad') || lowerFileName.includes('cry') || lowerFileName.includes('tear')) tags.push('sad');
+    if (lowerFileName.includes('angry') || lowerFileName.includes('mad') || lowerFileName.includes('rage')) tags.push('angry');
+    if (lowerFileName.includes('love') || lowerFileName.includes('heart') || lowerFileName.includes('kiss')) tags.push('love');
+    if (lowerFileName.includes('funny') || lowerFileName.includes('laugh') || lowerFileName.includes('lol')) tags.push('funny');
+    
+    // Category-based tags
+    if (lowerFileName.includes('animal') || lowerFileName.includes('cat') || lowerFileName.includes('dog') || 
+        lowerFileName.includes('bird') || lowerFileName.includes('fish') || lowerFileName.includes('pet')) tags.push('animals');
+    if (lowerFileName.includes('food') || lowerFileName.includes('eat') || lowerFileName.includes('drink') || 
+        lowerFileName.includes('cake') || lowerFileName.includes('pizza')) tags.push('food');
+    if (lowerFileName.includes('party') || lowerFileName.includes('celebrate') || lowerFileName.includes('birthday')) tags.push('celebration');
+    if (lowerFileName.includes('cool') || lowerFileName.includes('awesome') || lowerFileName.includes('nice')) tags.push('cool');
+    if (lowerFileName.includes('nature') || lowerFileName.includes('flower') || lowerFileName.includes('tree')) tags.push('nature');
+    if (lowerFileName.includes('meme') || lowerFileName.includes('viral')) tags.push('memes');
+    
+    // Object-based tags
+    if (lowerFileName.includes('car') || lowerFileName.includes('phone') || lowerFileName.includes('computer') || 
+        lowerFileName.includes('book') || lowerFileName.includes('ball')) tags.push('objects');
+    
+    // Expression-based tags
+    if (lowerFileName.includes('shock') || lowerFileName.includes('surprise') || lowerFileName.includes('wow') ||
+        lowerFileName.includes('expression') || lowerFileName.includes('face')) tags.push('expressions');
+    
+    // Reaction-based tags
+    if (lowerFileName.includes('reaction') || lowerFileName.includes('react') || 
+        lowerFileName.includes('response') || lowerFileName.includes('reply')) tags.push('reactions');
+    
+    return [...new Set(tags)]; // Remove duplicates
+  };
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     const newStickerFiles: StickerFile[] = files.map((file) => ({
       file,
       name: file.name.split(".")[0].replace(/[-_]/g, " "),
-      tags: [],
+      tags: generateSmartTags(file.name),
     }));
     setSelectedFiles((prev) => [...prev, ...newStickerFiles]);
   };
@@ -158,7 +194,7 @@ export default function AdminUpload() {
 
   const handleBatchProcess = async () => {
     if (selectedFiles.length === 0) {
-      alert("Lütfen en az bir dosya seçin");
+      alert("Please select at least one file");
       return;
     }
 
@@ -225,7 +261,7 @@ export default function AdminUpload() {
 
       // Show success message
       const { summary } = result;
-      alert(`✅ Batch işlemi tamamlandı!\n\n📊 Sonuçlar:\n✅ Başarılı: ${summary.successful}\n❌ Hatalı: ${summary.failed}\n📝 Toplam: ${summary.total}\n\nBatch ID: ${result.batchId}`);
+      alert(`✅ Batch processing completed!\n\n📊 Results:\n✅ Successful: ${summary.successful}\n❌ Failed: ${summary.failed}\n📝 Total: ${summary.total}\n\nBatch ID: ${result.batchId}`);
       
       // Clear form on success
       if (summary.successful > 0) {
@@ -234,7 +270,7 @@ export default function AdminUpload() {
       
     } catch (error) {
       console.error('Batch processing error:', error);
-      alert(`❌ Batch işlemi hatası: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`);
+      alert(`❌ Batch processing error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       
       // Reset progress on error
       setProcessingProgress(0);
@@ -276,14 +312,14 @@ export default function AdminUpload() {
             className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="h-4 w-4" />
-            Admin Dashboard&apos;a Dön
+            Back to Admin Dashboard
           </Link>
 
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Sticker Upload
           </h1>
           <p className="text-gray-600">
-            Yeni sticker&apos;ları yükle ve metadata ekle
+            Upload new stickers and add metadata
           </p>
         </div>
 
@@ -520,6 +556,25 @@ export default function AdminUpload() {
                             ))}
                           </div>
                           
+                          {/* Manual Tag Input */}
+                          <div className="flex gap-2 mb-2">
+                            <Input
+                              placeholder="Add custom tag..."
+                              className="text-xs"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  const input = e.target as HTMLInputElement;
+                                  const tag = input.value.trim();
+                                  if (tag && !sticker.tags.includes(tag)) {
+                                    addTag(index, tag);
+                                    input.value = '';
+                                  }
+                                }
+                              }}
+                            />
+                          </div>
+                          
+                          {/* Common Tags */}
                           <div className="flex flex-wrap gap-1">
                             {commonTags.slice(0, 6).map((tag) => (
                               <button

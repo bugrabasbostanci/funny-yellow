@@ -4,7 +4,8 @@
       "Bash(npm run build:*)",
       "Bash(rm:*)",
       "Bash(npm run optimize-stickers:*)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

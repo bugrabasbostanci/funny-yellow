@@ -1,18 +1,12 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { StickerCard } from "./sticker-card";
 import { DownloadOptionsModal } from "./download-options-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Search,
-  Grid3X3,
-  Grid2X2,
-  LayoutGrid,
-  X,
-} from "lucide-react";
+import { Search, Grid3X3, Grid2X2, LayoutGrid, X } from "lucide-react";
 import { DatabaseService } from "@/lib/database-service";
 import { type Database } from "@/lib/supabase";
 import { type StickerForDownload } from "@/lib/bulk-download-utils";
@@ -26,28 +20,94 @@ type StickerSize = "small" | "medium" | "large";
 async function generateFallbackStickerData(): Promise<StickerData[]> {
   // List of known sticker files (this would ideally be generated automatically)
   const stickerFiles = [
-    "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "27", "3", "4", "5", "6", "8",
-    "agent-sticker", "angry-walking-sticker", "binoculars-sticker", "bowing-down-sticker", "coban-sticker",
-    "covering-ear-sticker", "crazy-sticker", "cute-manga-sticker", "denying-sticker", "depressed-sticker",
-    "despair-sticker", "eyelid-pulling-sticker", "face-palm-sticker", "feet-up-sticker", "flower-sticker",
-    "giving-hand-sticker", "hand-on-cheek-sticker", "hiding-smile-sticker", "hope-sticker", "image-Photoroom",
-    "kermit-middle-finger", "kermit-sad", "kermit-sitting", "middle-finger-sticker", "monkey-side-eye",
-    "nervous-sticker", "plants-and-zombies-aesthetic -sunflower", "pocoyo-angry-sticker", "pocoyo-sitting-crying-sticker",
-    "pocoyo-sitting-happy-sticker", "pocoyo-sleeping-sticker", "pocoyo-standing-sticker", "pointing-eyes-sticker",
-    "ponder-sticker", "poor-sticker", "refuse-sticker", "rose-sticker", "rubbing-belly-sticker", "shinny-smile-sticker",
-    "shrek-funny", "shrek-rizz", "side-eye-sticker", "sly-sticker", "small-size-sticker", "smoking-cat-sticker",
-    "spy-sticker", "suspicious-sticker", "thumos-down-sticker", "thump-up-winking-witcker", "thumps-up-sticker",
-    "touching-nose-sticker", "villain-sticker", "wink-fingers-sticker", "wonder-female-sticker", "yuck-face-sticker"
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "25",
+    "27",
+    "3",
+    "4",
+    "5",
+    "6",
+    "8",
+    "agent-sticker",
+    "angry-walking-sticker",
+    "binoculars-sticker",
+    "bowing-down-sticker",
+    "coban-sticker",
+    "covering-ear-sticker",
+    "crazy-sticker",
+    "cute-manga-sticker",
+    "denying-sticker",
+    "depressed-sticker",
+    "despair-sticker",
+    "eyelid-pulling-sticker",
+    "face-palm-sticker",
+    "feet-up-sticker",
+    "flower-sticker",
+    "giving-hand-sticker",
+    "hand-on-cheek-sticker",
+    "hiding-smile-sticker",
+    "hope-sticker",
+    "image-Photoroom",
+    "kermit-middle-finger",
+    "kermit-sad",
+    "kermit-sitting",
+    "middle-finger-sticker",
+    "monkey-side-eye",
+    "nervous-sticker",
+    "plants-and-zombies-aesthetic -sunflower",
+    "pocoyo-angry-sticker",
+    "pocoyo-sitting-crying-sticker",
+    "pocoyo-sitting-happy-sticker",
+    "pocoyo-sleeping-sticker",
+    "pocoyo-standing-sticker",
+    "pointing-eyes-sticker",
+    "ponder-sticker",
+    "poor-sticker",
+    "refuse-sticker",
+    "rose-sticker",
+    "rubbing-belly-sticker",
+    "shinny-smile-sticker",
+    "shrek-funny",
+    "shrek-rizz",
+    "side-eye-sticker",
+    "sly-sticker",
+    "small-size-sticker",
+    "smoking-cat-sticker",
+    "spy-sticker",
+    "suspicious-sticker",
+    "thumos-down-sticker",
+    "thump-up-winking-witcker",
+    "thumps-up-sticker",
+    "touching-nose-sticker",
+    "villain-sticker",
+    "wink-fingers-sticker",
+    "wonder-female-sticker",
+    "yuck-face-sticker",
   ];
 
   return stickerFiles.map((filename, index) => {
     const id = `fallback-${index}`;
-    const name = filename.charAt(0).toUpperCase() + filename.slice(1).replace(/-/g, ' ');
+    const name =
+      filename.charAt(0).toUpperCase() + filename.slice(1).replace(/-/g, " ");
     const slug = filename.toLowerCase();
-    
+
     // Simple tag generation based on filename
     const tags = generateTagsFromFilename(filename);
-    
+
     return {
       id,
       name,
@@ -56,7 +116,7 @@ async function generateFallbackStickerData(): Promise<StickerData[]> {
       file_url: `/stickers/source/${filename}.png`,
       thumbnail_url: `/stickers/source/${filename}.png`,
       file_size: 0,
-      file_format: 'png',
+      file_format: "png",
       width: 512,
       height: 512,
       download_count: 0, // Fallback mode - no real download tracking
@@ -67,34 +127,41 @@ async function generateFallbackStickerData(): Promise<StickerData[]> {
 }
 
 function generateTagsFromFilename(filename: string): string[] {
-  const baseTags = ['emoji', 'reaction'];
-  
+  const baseTags = ["emoji", "reaction"];
+
   // Add specific tags based on filename patterns
-  if (filename.includes('kermit')) baseTags.push('kermit', 'meme');
-  if (filename.includes('sad') || filename.includes('depressed') || filename.includes('despair')) baseTags.push('sad');
-  if (filename.includes('happy') || filename.includes('smile')) baseTags.push('happy');
-  if (filename.includes('angry')) baseTags.push('angry');
-  if (filename.includes('funny')) baseTags.push('funny');
-  if (filename.includes('cute')) baseTags.push('cute');
-  if (filename.includes('finger')) baseTags.push('rude');
-  if (filename.includes('monkey')) baseTags.push('monkey', 'meme');
-  if (filename.includes('shrek')) baseTags.push('shrek', 'meme');
-  if (filename.includes('pocoyo')) baseTags.push('pocoyo', 'cartoon');
-  if (filename.includes('flower') || filename.includes('rose')) baseTags.push('flower');
-  
+  if (filename.includes("kermit")) baseTags.push("kermit", "meme");
+  if (
+    filename.includes("sad") ||
+    filename.includes("depressed") ||
+    filename.includes("despair")
+  )
+    baseTags.push("sad");
+  if (filename.includes("happy") || filename.includes("smile"))
+    baseTags.push("happy");
+  if (filename.includes("angry")) baseTags.push("angry");
+  if (filename.includes("funny")) baseTags.push("funny");
+  if (filename.includes("cute")) baseTags.push("cute");
+  if (filename.includes("finger")) baseTags.push("rude");
+  if (filename.includes("monkey")) baseTags.push("monkey", "meme");
+  if (filename.includes("shrek")) baseTags.push("shrek", "meme");
+  if (filename.includes("pocoyo")) baseTags.push("pocoyo", "cartoon");
+  if (filename.includes("flower") || filename.includes("rose"))
+    baseTags.push("flower");
+
   return baseTags;
 }
 
 function generateFallbackTags() {
   return [
-    { tag: 'emoji', count: 50 },
-    { tag: 'reaction', count: 50 },
-    { tag: 'meme', count: 15 },
-    { tag: 'happy', count: 10 },
-    { tag: 'sad', count: 8 },
-    { tag: 'funny', count: 12 },
-    { tag: 'kermit', count: 3 },
-    { tag: 'cute', count: 5 },
+    { tag: "emoji", count: 50 },
+    { tag: "reaction", count: 50 },
+    { tag: "meme", count: 15 },
+    { tag: "happy", count: 10 },
+    { tag: "sad", count: 8 },
+    { tag: "funny", count: 12 },
+    { tag: "kermit", count: 3 },
+    { tag: "cute", count: 5 },
   ];
 }
 
@@ -102,9 +169,17 @@ export function StickerGallery() {
   const [selectedTag, setSelectedTag] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [stickers, setStickers] = useState<StickerData[]>([]);
-  const [popularTags, setPopularTags] = useState<{tag: string, count: number}[]>([]);
+  const [popularTags, setPopularTags] = useState<
+    { tag: string; count: number }[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [usingFallbackData, setUsingFallbackData] = useState(false);
+
+  // Infinite scroll pagination state
+  const [displayedStickers, setDisplayedStickers] = useState<StickerData[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const itemsPerPage = 24;
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Bulk download state
   const [selectionMode, setSelectionMode] = useState(false);
@@ -121,23 +196,28 @@ export function StickerGallery() {
         setLoading(true);
 
         // Add a small delay to ensure database consistency
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise((resolve) => setTimeout(resolve, 50));
 
         // Fetch from database
         const [stickersData, tagsData] = await Promise.all([
           DatabaseService.getStickers(),
-          DatabaseService.getPopularTags()
+          DatabaseService.getPopularTags(),
         ]);
-        
-        console.log("✅ Database connection successful, loaded", stickersData.length, "stickers");
-        
+
+        console.log(
+          "✅ Database connection successful, loaded",
+          stickersData.length,
+          "stickers"
+        );
+
         // Log a sample of download counts when loading from database
         const sampleStickers = stickersData.slice(0, 3);
-        console.log("📊 Sample download counts from database:", 
-          sampleStickers.map(s => ({ 
-            id: s.id.slice(0, 8), 
-            name: s.name, 
-            download_count: s.download_count 
+        console.log(
+          "📊 Sample download counts from database:",
+          sampleStickers.map((s) => ({
+            id: s.id.slice(0, 8),
+            name: s.name,
+            download_count: s.download_count,
           }))
         );
 
@@ -147,7 +227,9 @@ export function StickerGallery() {
           try {
             const freshData = await DatabaseService.getSticker(sticker.id);
             if (freshData.download_count !== sticker.download_count) {
-              console.warn(`⚠️ Data inconsistency detected for ${sticker.name}: list shows ${sticker.download_count}, fresh query shows ${freshData.download_count}`);
+              console.warn(
+                `⚠️ Data inconsistency detected for ${sticker.name}: list shows ${sticker.download_count}, fresh query shows ${freshData.download_count}`
+              );
             }
           } catch (err) {
             console.error(`❌ Could not verify sticker ${sticker.id}:`, err);
@@ -160,10 +242,10 @@ export function StickerGallery() {
         // If database fails, use fallback local data
         console.error("❌ Database connection failed:", error);
         console.log("🔄 Using local fallback data");
-        
+
         // Generate fallback sticker data from local files
         const fallbackStickers = await generateFallbackStickerData();
-        
+
         setStickers(fallbackStickers);
         setPopularTags(generateFallbackTags());
         setUsingFallbackData(true);
@@ -201,9 +283,60 @@ export function StickerGallery() {
     return filtered;
   }, [stickers, selectedTag, searchQuery]);
 
+  // Load more stickers for infinite scroll
+  const loadMoreStickers = useCallback(() => {
+    const startIndex = displayedStickers.length;
+    const endIndex = startIndex + itemsPerPage;
+    const newStickers = filteredStickers.slice(startIndex, endIndex);
+
+    if (newStickers.length > 0) {
+      setDisplayedStickers((prev) => {
+        // Prevent duplicates by checking existing IDs
+        const existingIds = new Set(prev.map((s) => s.id));
+        const uniqueNewStickers = newStickers.filter(
+          (s) => !existingIds.has(s.id)
+        );
+        return [...prev, ...uniqueNewStickers];
+      });
+      setHasMore(endIndex < filteredStickers.length);
+    } else {
+      setHasMore(false);
+    }
+  }, [filteredStickers, displayedStickers.length, itemsPerPage]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    const initialStickers = filteredStickers.slice(0, itemsPerPage);
+    setDisplayedStickers(initialStickers);
+    setHasMore(filteredStickers.length > itemsPerPage);
+  }, [filteredStickers, itemsPerPage]);
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          loadMoreStickers();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [loadMoreStickers, hasMore]);
+
   const handleDownload = async (stickerId: string) => {
-    console.log("🔽 Download started for sticker:", stickerId, "Database mode:", !usingFallbackData);
-    
+    console.log(
+      "🔽 Download started for sticker:",
+      stickerId,
+      "Database mode:",
+      !usingFallbackData
+    );
+
     // Only track download in database - no localStorage needed
     if (!usingFallbackData) {
       try {
@@ -215,9 +348,9 @@ export function StickerGallery() {
           "0.0.0.0",
           navigator.userAgent
         );
-        
+
         console.log("✅ Individual download tracked successfully in database");
-        
+
         // Refresh the specific sticker's data from database
         await refreshStickerData(stickerId);
       } catch (error) {
@@ -233,14 +366,16 @@ export function StickerGallery() {
   const refreshStickerData = async (stickerId: string) => {
     try {
       const updatedSticker = await DatabaseService.getSticker(stickerId);
-      setStickers(prevStickers => 
-        prevStickers.map(sticker => 
-          sticker.id === stickerId 
+      setStickers((prevStickers) =>
+        prevStickers.map((sticker) =>
+          sticker.id === stickerId
             ? { ...sticker, download_count: updatedSticker.download_count }
             : sticker
         )
       );
-      console.log(`🔄 Updated UI: sticker ${stickerId} now shows download_count: ${updatedSticker.download_count}`);
+      console.log(
+        `🔄 Updated UI: sticker ${stickerId} now shows download_count: ${updatedSticker.download_count}`
+      );
     } catch (refreshError) {
       console.error("⚠️ Could not refresh sticker data:", refreshError);
     }
@@ -253,8 +388,10 @@ export function StickerGallery() {
       return;
     }
 
-    console.log(`🔄 Refreshing UI for ${stickerIds.length} stickers after bulk download`);
-    
+    console.log(
+      `🔄 Refreshing UI for ${stickerIds.length} stickers after bulk download`
+    );
+
     try {
       // Refresh data for all affected stickers in parallel
       const refreshPromises = stickerIds.map(async (stickerId) => {
@@ -269,23 +406,35 @@ export function StickerGallery() {
 
       const refreshResults = await Promise.allSettled(refreshPromises);
       const successfulRefreshes = refreshResults
-        .filter((r): r is PromiseFulfilledResult<{ id: string; updatedData: StickerData }> => 
-          r.status === 'fulfilled' && r.value !== null
+        .filter(
+          (
+            r
+          ): r is PromiseFulfilledResult<{
+            id: string;
+            updatedData: StickerData;
+          }> => r.status === "fulfilled" && r.value !== null
         )
-        .map(r => r.value);
+        .map((r) => r.value);
 
       // Update all stickers at once
       if (successfulRefreshes.length > 0) {
-        setStickers(prevStickers => 
-          prevStickers.map(sticker => {
-            const refresh = successfulRefreshes.find(r => r.id === sticker.id);
-            return refresh 
-              ? { ...sticker, download_count: refresh.updatedData.download_count }
+        setStickers((prevStickers) =>
+          prevStickers.map((sticker) => {
+            const refresh = successfulRefreshes.find(
+              (r) => r.id === sticker.id
+            );
+            return refresh
+              ? {
+                  ...sticker,
+                  download_count: refresh.updatedData.download_count,
+                }
               : sticker;
           })
         );
 
-        console.log(`✅ Bulk UI update completed for ${successfulRefreshes.length}/${stickerIds.length} stickers`);
+        console.log(
+          `✅ Bulk UI update completed for ${successfulRefreshes.length}/${stickerIds.length} stickers`
+        );
       }
     } catch (error) {
       console.error("❌ Error during bulk UI refresh:", error);
@@ -315,10 +464,10 @@ export function StickerGallery() {
   };
 
   const selectAllStickers = () => {
-    const allFilteredStickerIds = new Set(
-      filteredStickers.map((sticker) => sticker.id)
+    const allDisplayedStickerIds = new Set(
+      displayedStickers.map((sticker) => sticker.id)
     );
-    setSelectedStickers(allFilteredStickerIds);
+    setSelectedStickers(allDisplayedStickerIds);
   };
 
   const deselectAllStickers = () => {
@@ -326,8 +475,8 @@ export function StickerGallery() {
   };
 
   const isAllSelected =
-    filteredStickers.length > 0 &&
-    filteredStickers.every((sticker) => selectedStickers.has(sticker.id));
+    displayedStickers.length > 0 &&
+    displayedStickers.every((sticker) => selectedStickers.has(sticker.id));
 
   const getGridClasses = () => {
     switch (stickerSize) {
@@ -398,8 +547,8 @@ export function StickerGallery() {
               Sticker Gallery
             </h2>
             <p className="text-muted-foreground">
-              Discover {stickers.length} free stickers with{" "}
-              {popularTags.length}+ popular tags
+              Discover {stickers.length} free stickers with {popularTags.length}
+              + popular tags
             </p>
           </div>
 
@@ -505,14 +654,11 @@ export function StickerGallery() {
                   variant="secondary"
                   className="bg-primary/10 text-primary"
                 >
-                  {selectedStickers.size} of {filteredStickers.length} selected
+                  {selectedStickers.size} of {displayedStickers.length} selected
                 </Badge>
                 {selectedTag !== "all" && (
                   <span className="text-muted-foreground">
-                    from{" "}
-                    <span className="font-medium">
-                      #{selectedTag}
-                    </span>
+                    from <span className="font-medium">#{selectedTag}</span>
                   </span>
                 )}
                 {selectedStickers.size > 0 && (
@@ -523,15 +669,14 @@ export function StickerGallery() {
               </span>
             ) : (
               <>
-                {filteredStickers.length} sticker
+                Showing {displayedStickers.length} of {filteredStickers.length}{" "}
+                sticker
                 {filteredStickers.length !== 1 ? "s" : ""}
                 {selectedTag !== "all" && (
                   <span className="hidden sm:inline">
                     {" "}
                     tagged with{" "}
-                    <span className="font-medium">
-                      #{selectedTag}
-                    </span>
+                    <span className="font-medium">#{selectedTag}</span>
                   </span>
                 )}
               </>
@@ -571,9 +716,9 @@ export function StickerGallery() {
         </div>
 
         {/* Sticker Grid */}
-        {filteredStickers.length > 0 ? (
+        {displayedStickers.length > 0 ? (
           <div className={`grid gap-4 ${gridClasses}`}>
-            {filteredStickers.map((sticker) => (
+            {displayedStickers.map((sticker) => (
               <StickerCard
                 key={sticker.id}
                 id={sticker.id}
@@ -594,8 +739,8 @@ export function StickerGallery() {
             <div className="text-6xl mb-4">🔍</div>
             <h3 className="text-xl font-semibold mb-2">No stickers found</h3>
             <p className="text-muted-foreground mb-4">
-              Try adjusting your search or tag filter to find what
-              you&apos;re looking for.
+              Try adjusting your search or tag filter to find what you&apos;re
+              looking for.
             </p>
             <Button
               onClick={() => {
@@ -608,14 +753,26 @@ export function StickerGallery() {
           </div>
         )}
 
-        {/* Load More */}
-        {filteredStickers.length > 0 && (
-          <div className="text-center mt-8">
-            <Button variant="outline" size="lg">
-              Load More Stickers
-            </Button>
+        {/* Infinite Scroll Sentinel */}
+        {hasMore && displayedStickers.length > 0 && (
+          <div ref={sentinelRef} className="text-center mt-8 py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+            <p className="text-sm text-muted-foreground">
+              Loading more stickers...
+            </p>
           </div>
         )}
+
+        {/* End of results indicator */}
+        {!hasMore &&
+          displayedStickers.length > 0 &&
+          filteredStickers.length > itemsPerPage && (
+            <div className="text-center mt-8 py-4">
+              <p className="text-sm text-muted-foreground">
+                🎉 You&apos;ve seen all {filteredStickers.length} stickers!
+              </p>
+            </div>
+          )}
 
         {/* Download Options Modal */}
         <DownloadOptionsModal

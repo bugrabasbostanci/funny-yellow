@@ -375,16 +375,18 @@ export default function AdminGallery() {
                     </div>
 
                     <div className={cardClasses.buttons}>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={`${cardClasses.button}`}
-                      >
-                        <Edit className="h-3 w-3" />
-                        {stickerSize === "large" && (
-                          <span className="ml-1">Edit</span>
-                        )}
-                      </Button>
+                      <Link href={`/admin/gallery/edit/${sticker.id}`}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className={`${cardClasses.button}`}
+                        >
+                          <Edit className="h-3 w-3" />
+                          {stickerSize === "large" && (
+                            <span className="ml-1">Edit</span>
+                          )}
+                        </Button>
+                      </Link>
                       <Button
                         variant="outline"
                         size="sm"

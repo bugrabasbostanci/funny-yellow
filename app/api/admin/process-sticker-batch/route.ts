@@ -1,9 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { v4 as uuidv4 } from 'uuid';
 
-// Use Node.js runtime for Sharp compatibility
-export const runtime = 'nodejs';
+// Use Edge runtime for Cloudflare Pages compatibility
+export const runtime = 'edge';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -60,9 +59,10 @@ function generateMetadata(fileName: string) {
   };
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const batchId = uuidv4();
+    // Generate batch ID using crypto.randomUUID (Edge Runtime compatible)
+    const batchId = crypto.randomUUID();
     console.log(`🚀 Starting batch processing: ${batchId}`);
 
     const formData = await request.formData();

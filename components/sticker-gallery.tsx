@@ -22,6 +22,82 @@ type StickerData = Database["public"]["Tables"]["stickers"]["Row"];
 
 type StickerSize = "small" | "medium" | "large";
 
+// Fallback data generation functions for when database is not available
+async function generateFallbackStickerData(): Promise<StickerData[]> {
+  // List of known sticker files (this would ideally be generated automatically)
+  const stickerFiles = [
+    "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "27", "3", "4", "5", "6", "8",
+    "agent-sticker", "angry-walking-sticker", "binoculars-sticker", "bowing-down-sticker", "coban-sticker",
+    "covering-ear-sticker", "crazy-sticker", "cute-manga-sticker", "denying-sticker", "depressed-sticker",
+    "despair-sticker", "eyelid-pulling-sticker", "face-palm-sticker", "feet-up-sticker", "flower-sticker",
+    "giving-hand-sticker", "hand-on-cheek-sticker", "hiding-smile-sticker", "hope-sticker", "image-Photoroom",
+    "kermit-middle-finger", "kermit-sad", "kermit-sitting", "middle-finger-sticker", "monkey-side-eye",
+    "nervous-sticker", "plants-and-zombies-aesthetic -sunflower", "pocoyo-angry-sticker", "pocoyo-sitting-crying-sticker",
+    "pocoyo-sitting-happy-sticker", "pocoyo-sleeping-sticker", "pocoyo-standing-sticker", "pointing-eyes-sticker",
+    "ponder-sticker", "poor-sticker", "refuse-sticker", "rose-sticker", "rubbing-belly-sticker", "shinny-smile-sticker",
+    "shrek-funny", "shrek-rizz", "side-eye-sticker", "sly-sticker", "small-size-sticker", "smoking-cat-sticker",
+    "spy-sticker", "suspicious-sticker", "thumos-down-sticker", "thump-up-winking-witcker", "thumps-up-sticker",
+    "touching-nose-sticker", "villain-sticker", "wink-fingers-sticker", "wonder-female-sticker", "yuck-face-sticker"
+  ];
+
+  return stickerFiles.map((filename, index) => {
+    const id = `fallback-${index}`;
+    const name = filename.charAt(0).toUpperCase() + filename.slice(1).replace(/-/g, ' ');
+    const slug = filename.toLowerCase();
+    
+    // Simple tag generation based on filename
+    const tags = generateTagsFromFilename(filename);
+    
+    return {
+      id,
+      name,
+      slug,
+      tags,
+      file_url: `/stickers/source/${filename}.png`,
+      thumbnail_url: `/stickers/source/${filename}.png`,
+      file_size: 0,
+      file_format: 'png',
+      width: 512,
+      height: 512,
+      download_count: 0, // Fallback mode - no real download tracking
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  });
+}
+
+function generateTagsFromFilename(filename: string): string[] {
+  const baseTags = ['emoji', 'reaction'];
+  
+  // Add specific tags based on filename patterns
+  if (filename.includes('kermit')) baseTags.push('kermit', 'meme');
+  if (filename.includes('sad') || filename.includes('depressed') || filename.includes('despair')) baseTags.push('sad');
+  if (filename.includes('happy') || filename.includes('smile')) baseTags.push('happy');
+  if (filename.includes('angry')) baseTags.push('angry');
+  if (filename.includes('funny')) baseTags.push('funny');
+  if (filename.includes('cute')) baseTags.push('cute');
+  if (filename.includes('finger')) baseTags.push('rude');
+  if (filename.includes('monkey')) baseTags.push('monkey', 'meme');
+  if (filename.includes('shrek')) baseTags.push('shrek', 'meme');
+  if (filename.includes('pocoyo')) baseTags.push('pocoyo', 'cartoon');
+  if (filename.includes('flower') || filename.includes('rose')) baseTags.push('flower');
+  
+  return baseTags;
+}
+
+function generateFallbackTags() {
+  return [
+    { tag: 'emoji', count: 50 },
+    { tag: 'reaction', count: 50 },
+    { tag: 'meme', count: 15 },
+    { tag: 'happy', count: 10 },
+    { tag: 'sad', count: 8 },
+    { tag: 'funny', count: 12 },
+    { tag: 'kermit', count: 3 },
+    { tag: 'cute', count: 5 },
+  ];
+}
+
 export function StickerGallery() {
   const [selectedTag, setSelectedTag] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -44,19 +120,52 @@ export function StickerGallery() {
       try {
         setLoading(true);
 
+        // Add a small delay to ensure database consistency
+        await new Promise(resolve => setTimeout(resolve, 50));
+
         // Fetch from database
         const [stickersData, tagsData] = await Promise.all([
           DatabaseService.getStickers(),
           DatabaseService.getPopularTags()
         ]);
         
+        console.log("✅ Database connection successful, loaded", stickersData.length, "stickers");
+        
+        // Log a sample of download counts when loading from database
+        const sampleStickers = stickersData.slice(0, 3);
+        console.log("📊 Sample download counts from database:", 
+          sampleStickers.map(s => ({ 
+            id: s.id.slice(0, 8), 
+            name: s.name, 
+            download_count: s.download_count 
+          }))
+        );
+
+        // Double-check first few stickers for consistency
+        console.log("🔍 Checking data consistency...");
+        for (const sticker of sampleStickers) {
+          try {
+            const freshData = await DatabaseService.getSticker(sticker.id);
+            if (freshData.download_count !== sticker.download_count) {
+              console.warn(`⚠️ Data inconsistency detected for ${sticker.name}: list shows ${sticker.download_count}, fresh query shows ${freshData.download_count}`);
+            }
+          } catch (err) {
+            console.error(`❌ Could not verify sticker ${sticker.id}:`, err);
+          }
+        }
         setStickers(stickersData);
         setPopularTags(tagsData);
         setUsingFallbackData(false);
-      } catch {
-        // If database fails, show error message
-        setStickers([]);
-        setPopularTags([]);
+      } catch (error) {
+        // If database fails, use fallback local data
+        console.error("❌ Database connection failed:", error);
+        console.log("🔄 Using local fallback data");
+        
+        // Generate fallback sticker data from local files
+        const fallbackStickers = await generateFallbackStickerData();
+        
+        setStickers(fallbackStickers);
+        setPopularTags(generateFallbackTags());
         setUsingFallbackData(true);
       } finally {
         setLoading(false);
@@ -93,17 +202,93 @@ export function StickerGallery() {
   }, [stickers, selectedTag, searchQuery]);
 
   const handleDownload = async (stickerId: string) => {
-    // Track download in database if available
+    console.log("🔽 Download started for sticker:", stickerId, "Database mode:", !usingFallbackData);
+    
+    // Only track download in database - no localStorage needed
     if (!usingFallbackData) {
       try {
+        console.log("📊 Tracking individual download in database...");
+
+        // Track download in database first
         await DatabaseService.trackDownload(
           stickerId,
           "0.0.0.0",
           navigator.userAgent
         );
-      } catch {
-        // Silently fail - tracking is not critical for user experience
+        
+        console.log("✅ Individual download tracked successfully in database");
+        
+        // Refresh the specific sticker's data from database
+        await refreshStickerData(stickerId);
+      } catch (error) {
+        console.error("❌ Database tracking failed:", error);
+        // Don't update UI if database fails
       }
+    } else {
+      console.log("⚠️ Fallback mode - download not tracked");
+    }
+  };
+
+  // Helper function to refresh individual sticker data
+  const refreshStickerData = async (stickerId: string) => {
+    try {
+      const updatedSticker = await DatabaseService.getSticker(stickerId);
+      setStickers(prevStickers => 
+        prevStickers.map(sticker => 
+          sticker.id === stickerId 
+            ? { ...sticker, download_count: updatedSticker.download_count }
+            : sticker
+        )
+      );
+      console.log(`🔄 Updated UI: sticker ${stickerId} now shows download_count: ${updatedSticker.download_count}`);
+    } catch (refreshError) {
+      console.error("⚠️ Could not refresh sticker data:", refreshError);
+    }
+  };
+
+  // Handle bulk download completion
+  const handleBulkDownloadComplete = async (stickerIds: string[]) => {
+    if (usingFallbackData) {
+      console.log("⚠️ Fallback mode - bulk download UI update skipped");
+      return;
+    }
+
+    console.log(`🔄 Refreshing UI for ${stickerIds.length} stickers after bulk download`);
+    
+    try {
+      // Refresh data for all affected stickers in parallel
+      const refreshPromises = stickerIds.map(async (stickerId) => {
+        try {
+          const updatedSticker = await DatabaseService.getSticker(stickerId);
+          return { id: stickerId, updatedData: updatedSticker };
+        } catch (error) {
+          console.error(`⚠️ Could not refresh sticker ${stickerId}:`, error);
+          return null;
+        }
+      });
+
+      const refreshResults = await Promise.allSettled(refreshPromises);
+      const successfulRefreshes = refreshResults
+        .filter((r): r is PromiseFulfilledResult<{ id: string; updatedData: StickerData }> => 
+          r.status === 'fulfilled' && r.value !== null
+        )
+        .map(r => r.value);
+
+      // Update all stickers at once
+      if (successfulRefreshes.length > 0) {
+        setStickers(prevStickers => 
+          prevStickers.map(sticker => {
+            const refresh = successfulRefreshes.find(r => r.id === sticker.id);
+            return refresh 
+              ? { ...sticker, download_count: refresh.updatedData.download_count }
+              : sticker;
+          })
+        );
+
+        console.log(`✅ Bulk UI update completed for ${successfulRefreshes.length}/${stickerIds.length} stickers`);
+      }
+    } catch (error) {
+      console.error("❌ Error during bulk UI refresh:", error);
     }
   };
 
@@ -437,6 +622,8 @@ export function StickerGallery() {
           stickers={selectedStickersData}
           isOpen={showDownloadModal}
           onClose={() => setShowDownloadModal(false)}
+          onDownload={handleDownload}
+          onBulkDownloadComplete={handleBulkDownloadComplete}
         />
       </div>
     </section>

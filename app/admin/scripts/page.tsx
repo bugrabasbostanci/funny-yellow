@@ -44,6 +44,7 @@ export default function AdminScripts() {
   ]);
 
   const runScript = async (scriptName: string) => {
+    // Set script as running
     setScripts((prev) =>
       prev.map((script) =>
         script.name === scriptName
@@ -57,26 +58,59 @@ export default function AdminScripts() {
     );
 
     try {
-      // TODO: Implement actual script execution
-      // For now, simulate the process
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      const response = await fetch('/api/admin/run-script', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ script: scriptName }),
+      });
 
-      setScripts((prev) =>
-        prev.map((script) =>
-          script.name === scriptName
-            ? {
-                ...script,
-                status: "success",
-                output: [
-                  ...script.output,
-                  `✅ ${scriptName} başarıyla tamamlandı`,
-                  `📂 İşlenen dosyalar: 5`,
-                  `⏱️ Süre: 3.2s`,
-                ],
+      if (!response.ok) {
+        throw new Error('Failed to start script');
+      }
+
+      // Handle Server-Sent Events
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      
+      if (!reader) {
+        throw new Error('No response body');
+      }
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              setScripts((prev) =>
+                prev.map((script) =>
+                  script.name === scriptName
+                    ? {
+                        ...script,
+                        status: data.type === 'end' ? (data.success ? 'success' : 'error') : 'running',
+                        output: [...script.output, data.message || data.data],
+                      }
+                    : script
+                )
+              );
+              
+              if (data.type === 'end') {
+                break;
               }
-            : script
-        )
-      );
+            } catch {
+              console.warn('Failed to parse SSE data:', line);
+            }
+          }
+        }
+      }
     } catch (error) {
       setScripts((prev) =>
         prev.map((script) =>
@@ -86,7 +120,7 @@ export default function AdminScripts() {
                 status: "error",
                 output: [
                   ...script.output,
-                  `❌ ${scriptName} hata aldı: ${error}`,
+                  `❌ ${scriptName} hata aldı: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`,
                 ],
               }
             : script
@@ -96,9 +130,93 @@ export default function AdminScripts() {
   };
 
   const runAllScripts = async () => {
-    for (const script of scripts) {
-      await runScript(script.name);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const scriptNames = scripts.map(s => s.name);
+      
+      // Set all scripts to initial state
+      setScripts(prev => prev.map(script => ({ 
+        ...script, 
+        status: 'idle', 
+        output: [] 
+      })));
+      
+      const response = await fetch('/api/admin/process-files', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ scripts: scriptNames }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to start pipeline');
+      }
+
+      // Handle Server-Sent Events for pipeline
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      
+      if (!reader) {
+        throw new Error('No response body');
+      }
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              if (data.type === 'step_start') {
+                // Mark current script as running
+                setScripts((prev) =>
+                  prev.map((script) =>
+                    script.name === data.script
+                      ? { ...script, status: 'running', output: [`${data.script} başlatılıyor...`] }
+                      : script
+                  )
+                );
+              } else if (data.type === 'step_output' || data.type === 'step_error') {
+                // Add output to current script
+                setScripts((prev) =>
+                  prev.map((script) =>
+                    script.name === data.script
+                      ? { ...script, output: [...script.output, data.data] }
+                      : script
+                  )
+                );
+              } else if (data.type === 'step_complete') {
+                // Mark script as complete
+                setScripts((prev) =>
+                  prev.map((script) =>
+                    script.name === data.script
+                      ? { 
+                          ...script, 
+                          status: data.success ? 'success' : 'error',
+                          output: [...script.output, data.message]
+                        }
+                      : script
+                  )
+                );
+              }
+              
+              if (data.type === 'pipeline_complete') {
+                break;
+              }
+            } catch {
+              console.warn('Failed to parse pipeline SSE data:', line);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Pipeline error:', error);
+      alert(`Pipeline hata aldı: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`);
     }
   };
 

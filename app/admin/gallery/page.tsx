@@ -12,15 +12,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowLeft, Search, Edit, Trash2, Download } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 interface Sticker {
   id: string;
   name: string;
   tags: string[];
-  url: string;
-  downloads: number;
+  file_url: string;
+  thumbnail_url?: string;
+  download_count: number;
   created_at: string;
+  slug?: string;
+  file_size?: number;
 }
 
 export default function AdminGallery() {
@@ -46,44 +50,28 @@ export default function AdminGallery() {
     "cool",
   ];
 
-  // Mock data - gerçek implementation'da Supabase'den gelecek
+  // Load stickers from Supabase via API
   useEffect(() => {
     const loadStickers = async () => {
       setLoading(true);
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const mockStickers: Sticker[] = [
-        {
-          id: "1",
-          name: "Happy Face",
-          tags: ["happy", "smile", "positive", "reactions"],
-          url: "/stickers/webp/happy-face.webp",
-          downloads: 156,
-          created_at: "2024-01-15",
-        },
-        {
-          id: "2",
-          name: "Cat Meme",
-          tags: ["cat", "meme", "funny", "animals"],
-          url: "/stickers/webp/cat-meme.webp",
-          downloads: 89,
-          created_at: "2024-01-14",
-        },
-        {
-          id: "3",
-          name: "Celebration",
-          tags: ["party", "celebration", "happy", "emoji"],
-          url: "/stickers/webp/celebration.webp",
-          downloads: 203,
-          created_at: "2024-01-13",
-        },
-      ];
-
-      setStickers(mockStickers);
-      setFilteredStickers(mockStickers);
-      setLoading(false);
+      try {
+        const response = await fetch('/api/admin/stickers');
+        
+        if (!response.ok) {
+          throw new Error('Failed to load stickers');
+        }
+        
+        const data = await response.json();
+        setStickers(data.stickers || []);
+        setFilteredStickers(data.stickers || []);
+      } catch (error) {
+        console.error('Error loading stickers:', error);
+        alert('Sticker\'lar yüklenirken hata oluştu');
+        setStickers([]);
+        setFilteredStickers([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadStickers();
@@ -112,10 +100,27 @@ export default function AdminGallery() {
   }, [stickers, searchTerm, selectedTag]);
 
   const deleteSticker = async (id: string) => {
-    if (confirm("Bu sticker'ı silmek istediğinizden emin misiniz?")) {
+    if (!confirm("Bu sticker'ı silmek istediğinizden emin misiniz?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/stickers?id=${id}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Delete failed');
+      }
+      
+      // Remove from local state
       setStickers((prev) => prev.filter((s) => s.id !== id));
-      // TODO: Implement actual delete logic
-      console.log("Delete sticker:", id);
+      alert('✅ Sticker başarıyla silindi');
+      
+    } catch (error) {
+      console.error('Delete error:', error);
+      alert(`❌ Silme hatası: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`);
     }
   };
 
@@ -191,9 +196,18 @@ export default function AdminGallery() {
             {filteredStickers.map((sticker) => (
               <Card key={sticker.id} className="overflow-hidden">
                 <CardContent className="p-0">
-                  <div className="aspect-square bg-gray-100 flex items-center justify-center">
-                    <div className="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center">
-                      <span className="text-gray-400 text-xs">Sticker</span>
+                  <div className="aspect-square bg-gray-100 flex items-center justify-center p-4">
+                    <div className="relative w-full h-full">
+                      <Image 
+                        src={sticker.file_url || sticker.thumbnail_url || '/placeholder-sticker.png'}
+                        alt={sticker.name}
+                        fill
+                        className="object-contain rounded-lg"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = '/placeholder-sticker.png';
+                        }}
+                      />
                     </div>
                   </div>
 
@@ -218,7 +232,7 @@ export default function AdminGallery() {
                     <div className="flex justify-between items-center text-sm text-gray-500 mb-4">
                       <span className="flex items-center gap-1">
                         <Download className="h-3 w-3" />
-                        {sticker.downloads}
+                        {sticker.download_count || 0}
                       </span>
                       <span>{sticker.created_at}</span>
                     </div>

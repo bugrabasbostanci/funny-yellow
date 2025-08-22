@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Download, Eye, Check } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { SimplePlatformDetection } from "@/lib/simple-platform-detection";
 
 interface StickerCardProps {
@@ -44,6 +44,20 @@ export function StickerCard({
   const [isDownloading, setIsDownloading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showAllTags, setShowAllTags] = useState(false);
+  
+  // Debouncing for download action
+  const downloadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastDownloadTimeRef = useRef<number>(0);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    const timeoutRef = downloadTimeoutRef.current;
+    return () => {
+      if (timeoutRef) {
+        clearTimeout(timeoutRef);
+      }
+    };
+  }, []);
 
   const handlePreview = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -60,7 +74,30 @@ export function StickerCard({
   const handleDownload = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Debouncing: prevent rapid clicks
+    const now = Date.now();
+    const DEBOUNCE_TIME = 1000; // 1 second debounce
+    
+    if (now - lastDownloadTimeRef.current < DEBOUNCE_TIME) {
+      console.log(`⚠️ Download debounced for sticker ${id} - too soon after last click`);
+      return;
+    }
+    
+    if (isDownloading) {
+      console.log(`⚠️ Download already in progress for sticker ${id}`);
+      return;
+    }
+    
+    // Clear any existing timeout
+    if (downloadTimeoutRef.current) {
+      clearTimeout(downloadTimeoutRef.current);
+    }
+    
+    lastDownloadTimeRef.current = now;
     setIsDownloading(true);
+    
+    console.log(`🔽 Starting debounced download for sticker ${id}`);
 
     try {
       const url = imageUrl || "/placeholder.svg";

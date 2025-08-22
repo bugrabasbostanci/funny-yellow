@@ -83,15 +83,61 @@ export default function AdminUpload() {
   };
 
   const handleUpload = async () => {
+    if (selectedFiles.length === 0) {
+      alert("Lütfen en az bir dosya seçin");
+      return;
+    }
+
     setIsUploading(true);
-    // TODO: Implement actual upload logic
-    console.log("Upload stickers:", selectedFiles);
+    try {
+      // Prepare FormData
+      const formData = new FormData();
+      
+      // Add files
+      selectedFiles.forEach((stickerFile) => {
+        formData.append('files', stickerFile.file);
+      });
+      
+      // Prepare metadata
+      const metadata: Record<string, { name: string; tags: string[] }> = {};
+      selectedFiles.forEach((stickerFile) => {
+        metadata[stickerFile.file.name] = {
+          name: stickerFile.name,
+          tags: stickerFile.tags
+        };
+      });
+      formData.append('metadata', JSON.stringify(metadata));
 
-    // Simulate upload process
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Upload files
+      const response = await fetch('/api/admin/upload-files', {
+        method: 'POST',
+        body: formData
+      });
 
-    setIsUploading(false);
-    alert("Sticker upload tamamlandı! (Simulated)");
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Upload failed');
+      }
+
+      // Show success message
+      alert(`✅ Upload başarılı!\n${result.uploaded}/${result.total} dosya yüklendi`);
+      
+      // Show errors if any
+      if (result.errors && result.errors.length > 0) {
+        console.warn('Upload errors:', result.errors);
+        alert(`⚠️ Bazı dosyalarda hata: ${result.errors.join(', ')}`);
+      }
+      
+      // Clear form on success
+      setSelectedFiles([]);
+      
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert(`❌ Upload hatası: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (

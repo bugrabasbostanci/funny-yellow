@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, Image as Image, Settings } from "lucide-react";
+import { Upload, Image as ImageIcon, Settings } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminDashboard() {
@@ -41,7 +41,7 @@ export default function AdminDashboard() {
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Image className="h-5 w-5" />
+                <ImageIcon className="h-5 w-5" />
                 Sticker Yönetimi
               </CardTitle>
               <CardDescription>

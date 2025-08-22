@@ -7,17 +7,26 @@ import { MessageCircle, Download, Package } from "lucide-react";
 import { WhatsAppStickerService } from "@/lib/whatsapp-integration";
 import { BulkDownloadService, type StickerForDownload } from "@/lib/bulk-download-utils";
 import { SimplePlatformDetection } from "@/lib/simple-platform-detection";
+import { DatabaseService } from "@/lib/database-service";
 import { useState } from "react";
 
 interface DownloadOptionsModalProps {
   stickers: StickerForDownload[];
   isOpen: boolean;
   onClose: () => void;
+  onDownload?: (stickerId: string) => void;
+  onBulkDownloadComplete?: (stickerIds: string[]) => void;
 }
 
 type DownloadType = 'individual' | 'zip' | 'whatsapp';
 
-export function DownloadOptionsModal({ stickers, isOpen, onClose }: DownloadOptionsModalProps) {
+export function DownloadOptionsModal({ 
+  stickers, 
+  isOpen, 
+  onClose, 
+  onDownload, 
+  onBulkDownloadComplete 
+}: DownloadOptionsModalProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadType, setDownloadType] = useState<DownloadType | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -49,6 +58,31 @@ export function DownloadOptionsModal({ stickers, isOpen, onClose }: DownloadOpti
           );
           await WhatsAppStickerService.downloadStickerPack(stickerPack);
           break;
+      }
+      
+      // Track downloads for all stickers efficiently in one batch
+      try {
+        console.log(`🔄 Tracking bulk download for ${stickers.length} stickers`);
+        
+        await DatabaseService.trackBulkDownload(
+          stickers.map(s => s.id),
+          "0.0.0.0", // IP address - could be improved with actual client IP
+          navigator.userAgent
+        );
+        
+        // Notify parent component that bulk download completed
+        onBulkDownloadComplete?.(stickers.map(s => s.id));
+        
+        console.log(`✅ Bulk download tracking completed for ${stickers.length} stickers`);
+      } catch (trackingError) {
+        console.error("❌ Error tracking bulk download:", trackingError);
+        // Fallback to individual tracking if bulk fails
+        console.log("🔄 Falling back to individual download tracking...");
+        if (onDownload) {
+          stickers.forEach(sticker => {
+            onDownload(sticker.id);
+          });
+        }
       }
       
       setTimeout(() => {

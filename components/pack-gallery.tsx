@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, ArrowLeft, X } from "lucide-react";
-import { loadPacksFromDatabase, getStickersByPack, type StickerPack } from "@/lib/pack-definitions";
+import { loadPacksFromDatabase, type StickerPack } from "@/lib/pack-definitions";
 import { DatabaseService } from "@/lib/database-service";
 import { type Database } from "@/lib/supabase";
 import { type StickerForDownload } from "@/lib/bulk-download-utils";
@@ -30,6 +30,13 @@ export function PackGallery() {
         ]);
         setStickers(stickersData);
         setPacks(packsData);
+        console.log("🔍 Loaded packs:", packsData.map(p => ({ id: p.id, name: p.name, previews: p.previewStickers })));
+        
+        // Pocoyo pack detayları
+        const pocoyoPack = packsData.find(p => p.name.includes('Pocoyo'));
+        if (pocoyoPack) {
+          console.log("🔍 Pocoyo pack details:", pocoyoPack);
+        }
         setUsingFallbackData(false);
       } catch (error) {
         console.error("Failed to load data for packs:", error);
@@ -199,7 +206,22 @@ export function PackGallery() {
         {filteredPacks.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredPacks.map((pack) => {
-              const packStickers = getStickersByPack(pack.id, stickers);
+              // For database packs, find stickers by pack.stickerIds (which contains slugs)
+              const packStickers = stickers.filter(sticker => 
+                pack.stickerIds.some(packStickerId => 
+                  sticker.slug === packStickerId || 
+                  sticker.name.toLowerCase().replace(/\s+/g, '-') === packStickerId ||
+                  sticker.name.toLowerCase().includes(packStickerId.toLowerCase())
+                )
+              );
+              
+              console.log(`🔍 Pack "${pack.name}" stickers:`, {
+                packId: pack.id,
+                expectedStickerIds: pack.stickerIds,
+                foundStickers: packStickers.map(s => ({ id: s.id, name: s.name, slug: s.slug })),
+                allStickers: stickers.slice(0, 3).map(s => ({ id: s.id, name: s.name, slug: s.slug }))
+              });
+              
               const stickerForDownload: StickerForDownload[] = packStickers.map(
                 (sticker) => ({
                   id: sticker.id,

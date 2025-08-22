@@ -144,10 +144,12 @@ export default function AdminPacksPage() {
           </div>
 
           {/* Create New Pack Button */}
-          <Button className="bg-yellow-600 hover:bg-yellow-700 text-white">
-            <Plus className="w-4 h-4 mr-2" />
-            Yeni Pack Oluştur
-          </Button>
+          <Link href="/admin/packs/create">
+            <Button className="bg-yellow-600 hover:bg-yellow-700 text-white">
+              <Plus className="w-4 h-4 mr-2" />
+              Yeni Pack Oluştur
+            </Button>
+          </Link>
         </div>
 
         {/* Stats */}
@@ -270,10 +272,12 @@ export default function AdminPacksPage() {
                 Aramayı Temizle
               </Button>
             ) : (
-              <Button className="bg-yellow-600 hover:bg-yellow-700 text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                İlk Pack&apos;i Oluştur
-              </Button>
+              <Link href="/admin/packs/create">
+                <Button className="bg-yellow-600 hover:bg-yellow-700 text-white">
+                  <Plus className="w-4 h-4 mr-2" />
+                  İlk Pack&apos;i Oluştur
+                </Button>
+              </Link>
             )}
           </div>
         )}

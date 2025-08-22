@@ -19,6 +19,12 @@ export interface StickerPack {
 function convertDbPackToStickerPack(pack: PackData, stickers: StickerData[]): StickerPack {
   const stickerIds = stickers.map(s => s.slug || s.name.toLowerCase().replace(/\s+/g, '-'));
   
+  console.log(`🔍 Converting pack "${pack.name}":`, {
+    packId: pack.id,
+    stickers: stickers.map(s => ({ name: s.name, slug: s.slug })),
+    generatedIds: stickerIds
+  });
+  
   return {
     id: pack.id,
     name: pack.name,
@@ -154,8 +160,13 @@ export function getPackByStickerId(stickerId: string): StickerPack | undefined {
 }
 
 export function getStickersByPack(packId: string, allStickers: StickerData[]): StickerData[] {
+  // For database pack IDs (UUIDs), we need to use the database service
+  // This function is only used for fallback hardcoded packs
   const pack = getPackById(packId);
-  if (!pack) return [];
+  if (!pack) {
+    console.log(`🔍 Pack "${packId}" not found in fallback packs, this should use DatabaseService.getPackById instead`);
+    return [];
+  }
   
   return allStickers.filter(sticker => 
     pack.stickerIds.some(packStickerId => 

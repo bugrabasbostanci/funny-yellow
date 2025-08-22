@@ -10,6 +10,53 @@ import { DownloadOptionsModal } from "./download-options-modal";
 import { type StickerForDownload } from "@/lib/bulk-download-utils";
 import Image from "next/image";
 
+// Helper component for preview images with fallback
+function PreviewImage({ stickerId, character, alt }: { stickerId: string; character: string; alt: string }) {
+  const [imageError, setImageError] = useState(false);
+  
+  const getCharacterEmoji = (char: string) => {
+    switch (char.toLowerCase()) {
+      case "emoji": return "😀";
+      case "kermit": return "🐸";
+      case "pocoyo": return "👦";
+      case "shrek": return "👹";
+      case "animals": return "🐱";
+      case "cat": return "🐱";
+      default: return "📦";
+    }
+  };
+
+  // Known missing files - show emoji directly
+  const knownMissingFiles = [
+    'pocoyo-laughing',
+    'pocoyo-hush', 
+    'pocoyo-flower'
+  ];
+
+  if (imageError || knownMissingFiles.includes(stickerId)) {
+    return (
+      <div className="w-full h-full flex items-center justify-center text-2xl">
+        {getCharacterEmoji(character)}
+      </div>
+    );
+  }
+
+  return (
+    <Image
+      src={`/stickers/source/${stickerId}.png`}
+      alt={alt}
+      width={80}
+      height={80}
+      className="w-full h-full object-contain"
+      onError={() => {
+        const url = `/stickers/source/${stickerId}.png`;
+        console.log(`❌ Failed to load image: ${url}`);
+        setImageError(true);
+      }}
+    />
+  );
+}
+
 interface PackCardProps {
   pack: StickerPack;
   stickers: StickerForDownload[];
@@ -24,14 +71,9 @@ export function PackCard({
   onBulkDownloadComplete 
 }: PackCardProps) {
   const [showDownloadModal, setShowDownloadModal] = useState(false);
-  const [imageError, setImageError] = useState(false);
 
   const handleDownloadPack = () => {
     setShowDownloadModal(true);
-  };
-
-  const handleImageError = () => {
-    setImageError(true);
   };
 
   return (
@@ -56,29 +98,16 @@ export function PackCard({
 
           {/* Preview Grid */}
           <div className="grid grid-cols-3 gap-2 mb-4">
-            {pack.previewStickers.slice(0, 3).map((stickerId) => (
+            {pack.previewStickers.slice(0, 3).map((stickerId, index) => (
               <div
-                key={stickerId}
+                key={`${stickerId}-${index}`}
                 className="aspect-square bg-muted/50 rounded-lg overflow-hidden flex items-center justify-center"
               >
-                {!imageError ? (
-                  <Image
-                    src={`/stickers/source/${stickerId}.png`}
-                    alt={`${pack.character} sticker`}
-                    width={80}
-                    height={80}
-                    className="w-full h-full object-contain"
-                    onError={handleImageError}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-2xl">
-                    {pack.character === "Emoji" ? "😀" : 
-                     pack.character === "Kermit" ? "🐸" :
-                     pack.character === "Pocoyo" ? "👦" :
-                     pack.character === "Shrek" ? "👹" :
-                     pack.character === "Animals" ? "🐱" : "📦"}
-                  </div>
-                )}
+                <PreviewImage
+                  stickerId={stickerId}
+                  character={pack.character}
+                  alt={`${pack.character} sticker`}
+                />
               </div>
             ))}
           </div>

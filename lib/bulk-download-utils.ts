@@ -35,9 +35,11 @@ export class BulkDownloadService {
       // Download all stickers and add to ZIP (flat structure)
       const downloadPromises = stickers.map(async (sticker) => {
         try {
+          console.log(`🔍 Downloading sticker: ${sticker.name} from URL: ${sticker.imageUrl}`);
           const response = await fetch(sticker.imageUrl);
           if (!response.ok) {
-            throw new Error(`Failed to fetch: ${response.status}`);
+            console.error(`❌ Failed to fetch sticker ${sticker.name}: ${response.status} - ${response.statusText}`);
+            throw new Error(`Failed to fetch: ${response.status} - ${response.statusText}`);
           }
           
           const blob = await response.blob();
@@ -156,9 +158,11 @@ export class BulkDownloadService {
           detail: { completed, total, current: `Downloading ${sticker.name}...` }
         }));
 
+        console.log(`🔍 Individual download: ${sticker.name} from URL: ${sticker.imageUrl}`);
         const response = await fetch(sticker.imageUrl);
         if (!response.ok) {
-          throw new Error(`Failed to fetch: ${response.status}`);
+          console.error(`❌ Failed to fetch sticker ${sticker.name}: ${response.status} - ${response.statusText}`);
+          throw new Error(`Failed to fetch: ${response.status} - ${response.statusText}`);
         }
         
         const blob = await response.blob();

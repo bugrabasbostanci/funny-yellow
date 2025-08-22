@@ -5,6 +5,8 @@
 3. Admin sayfaları mock veriler ile çalışıyor. Gerçek upload pipeline ve crud işlemlerini oluştur
 4. Sticker yükleme, optimize etme ve tag oluşturma eziyet olmamalı. Admin sayfasından yapılsın. (DONE) Upload pipeline nasıl çalışıyor ANLA!
 
+---
+
 5. Genel bir temizlik yap. Scriptler, docslar, gereksiz dosyaları sil.
 
 6. Admin sayfalarını incele ve özellkleri eklemeye devam et.

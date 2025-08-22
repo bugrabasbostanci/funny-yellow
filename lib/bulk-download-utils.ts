@@ -5,7 +5,7 @@ import { SimplePlatformDetection } from './simple-platform-detection';
 export interface StickerForDownload {
   id: string;
   name: string;
-  category: string;
+  tags: string[];
   imageUrl: string;
 }
 

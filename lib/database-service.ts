@@ -17,7 +17,7 @@ export class DatabaseService {
 
     if (options?.search) {
       query = query.or(
-        `name.ilike.%${options.search}%,tags.cs.{${options.search}},category.ilike.%${options.search}%`
+        `name.ilike.%${options.search}%,tags.cs.{${options.search}}`
       );
     }
 

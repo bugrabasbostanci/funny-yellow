@@ -18,7 +18,7 @@ export interface Sticker {
 
 export class WhatsAppStickerService {
   static async createStickerPack(
-    stickers: { id: string; name: string; category?: string; imageUrl: string }[],
+    stickers: { id: string; name: string; tags: string[]; imageUrl: string }[],
     packName: string
   ): Promise<StickerPack> {
     // Limit to 30 stickers as per WhatsApp requirements
@@ -35,7 +35,7 @@ export class WhatsAppStickerService {
       licenseAgreementWebsite: "https://funnyyellow.com/terms",
       stickers: limitedStickers.map((sticker) => ({
         imageFile: sticker.imageUrl,
-        emojis: this.getCategoryEmojis(sticker.category || "default"),
+        emojis: this.getTagBasedEmojis(sticker.tags || ["default"]),
         name: sticker.name,
       })),
     };
@@ -43,24 +43,73 @@ export class WhatsAppStickerService {
     return stickerPack;
   }
 
-  static getCategoryEmojis(category: string): string[] {
+  static getTagBasedEmojis(tags: string[]): string[] {
     const emojiMap: Record<string, string[]> = {
-      // Legacy categories
-      emotions: ["😊", "😢", "😡", "😴", "😍", "🥰"],
-      reactions: ["👍", "👎", "😮", "😱", "👏", "🙌"],
-      gestures: ["👋", "🤝", "👌", "✌️", "🤟", "🙏"],
-      characters: ["👨", "👩", "🧑", "👶", "🧓", "👸"],
-      // Common tag-based emojis
+      // Emotion tags
       funny: ["😂", "🤣", "😆", "😄", "😁", "😊"],
       cute: ["🥰", "😍", "😊", "🤗", "😇", "🥺"],
       love: ["❤️", "💕", "💖", "😍", "🥰", "💘"],
       sad: ["😢", "😭", "😔", "☹️", "😞", "💔"],
       angry: ["😡", "😤", "🤬", "😠", "👿", "💢"],
       happy: ["😊", "😄", "😁", "🙂", "😃", "😀"],
+      crazy: ["🤪", "😜", "🤯", "😵", "🤡", "🎭"],
+      nervous: ["😰", "😅", "😓", "😬", "😟", "🫨"],
+      
+      // Action tags
+      thumbs: ["👍", "👎", "👌", "🤙", "🤘", "✌️"],
+      wink: ["😉", "😘", "😗", "😙", "💋", "😚"],
+      thinking: ["🤔", "💭", "🧠", "🤷", "💡", "❓"],
+      facepalm: ["🤦", "😤", "🙄", "😮‍💨", "😔", "😩"],
+      sideeye: ["🙄", "😏", "🤨", "😒", "👀", "👁️"],
+      
+      // Character tags
+      kermit: ["🐸", "🎭", "🌟", "💚", "🎪", "🎨"],
+      shrek: ["👹", "💚", "🌿", "🏰", "✨", "🎭"],
+      monkey: ["🐵", "🙈", "🙉", "🙊", "🍌", "🌴"],
+      cat: ["🐱", "😸", "😹", "😻", "😼", "😽"],
+      agent: ["🕵️", "🔍", "🕴️", "🔎", "🔐", "⚡"],
+      
+      // Object tags
+      flower: ["🌸", "🌺", "🌻", "🌷", "🌹", "💐"],
+      rose: ["🌹", "💐", "❤️", "💕", "🌺", "💖"],
+      
+      // Mood tags
+      villain: ["😈", "👿", "🔥", "⚡", "💀", "🖤"],
+      spy: ["🕵️", "🔍", "🕴️", "🔎", "🔐", "⚡"],
+      rizz: ["😎", "💪", "🔥", "✨", "👑", "💯"],
+      
+      // General tags
+      emoji: ["😊", "😄", "😁", "🙂", "😃", "😀"],
+      reaction: ["👍", "👎", "😮", "😱", "👏", "🙌"],
+      meme: ["😂", "🤣", "💀", "😭", "🔥", "💯"],
+      rude: ["🖕", "😠", "💢", "😤", "👿", "🤬"],
+      
       // Default fallback
       default: ["😊", "👍", "😄", "🎉", "✨", "💫"]
     };
-    return emojiMap[category.toLowerCase()] || emojiMap.default;
+    
+    // Collect emojis from all matching tags
+    const collectedEmojis = new Set<string>();
+    
+    for (const tag of tags) {
+      const tagEmojis = emojiMap[tag.toLowerCase()];
+      if (tagEmojis) {
+        tagEmojis.forEach(emoji => collectedEmojis.add(emoji));
+      }
+    }
+    
+    // If no emojis found, use default
+    if (collectedEmojis.size === 0) {
+      return emojiMap.default;
+    }
+    
+    // Return up to 6 emojis (WhatsApp limit)
+    return Array.from(collectedEmojis).slice(0, 6);
+  }
+
+  // Keep legacy method for backward compatibility
+  static getCategoryEmojis(category: string): string[] {
+    return this.getTagBasedEmojis([category]);
   }
 
   static async convertToWebP(blob: Blob, name: string): Promise<Blob> {

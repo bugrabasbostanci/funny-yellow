@@ -20,20 +20,13 @@ import { type StickerForDownload } from "@/lib/bulk-download-utils";
 // Use Supabase database types
 type StickerData = Database["public"]["Tables"]["stickers"]["Row"];
 
-type CategoryData = {
-  id: string;
-  name: string;
-  count: number;
-  icon: string;
-};
-
 type StickerSize = "small" | "medium" | "large";
 
 export function StickerGallery() {
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedTag, setSelectedTag] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [stickers, setStickers] = useState<StickerData[]>([]);
-  const [categories, setCategories] = useState<CategoryData[]>([]);
+  const [popularTags, setPopularTags] = useState<{tag: string, count: number}[]>([]);
   const [loading, setLoading] = useState(true);
   const [usingFallbackData, setUsingFallbackData] = useState(false);
 
@@ -45,20 +38,25 @@ export function StickerGallery() {
   const [stickerSize, setStickerSize] = useState<StickerSize>("medium");
   const [showDownloadModal, setShowDownloadModal] = useState(false);
 
-  // Load stickers and categories on component mount
+  // Load stickers and popular tags on component mount
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
 
         // Fetch from database
-        const stickersData = await DatabaseService.getStickers();
+        const [stickersData, tagsData] = await Promise.all([
+          DatabaseService.getStickers(),
+          DatabaseService.getPopularTags()
+        ]);
+        
         setStickers(stickersData);
+        setPopularTags(tagsData);
         setUsingFallbackData(false);
       } catch {
         // If database fails, show error message
         setStickers([]);
-        setCategories([]);
+        setPopularTags([]);
         setUsingFallbackData(true);
       } finally {
         setLoading(false);
@@ -71,10 +69,10 @@ export function StickerGallery() {
   const filteredStickers = useMemo(() => {
     let filtered = stickers;
 
-    // Filter by category
-    if (selectedCategory !== "all") {
-      filtered = filtered.filter(
-        (sticker) => sticker.category === selectedCategory
+    // Filter by tag
+    if (selectedTag !== "all") {
+      filtered = filtered.filter((sticker) =>
+        sticker.tags?.includes(selectedTag)
       );
     }
 
@@ -92,7 +90,7 @@ export function StickerGallery() {
     }
 
     return filtered;
-  }, [stickers, selectedCategory, searchQuery]);
+  }, [stickers, selectedTag, searchQuery]);
 
   const handleDownload = async (stickerId: string) => {
     // Track download in database if available
@@ -173,7 +171,7 @@ export function StickerGallery() {
       .map((sticker) => ({
         id: sticker.id,
         name: sticker.name,
-        category: sticker.category,
+        tags: sticker.tags || [],
         imageUrl: sticker.file_url,
       }));
   }, [stickers, selectedStickers]);
@@ -215,8 +213,8 @@ export function StickerGallery() {
               Sticker Gallery
             </h2>
             <p className="text-muted-foreground">
-              Discover {stickers.length} free stickers across{" "}
-              {categories.length} categories
+              Discover {stickers.length} free stickers with{" "}
+              {popularTags.length}+ popular tags
             </p>
           </div>
 
@@ -286,6 +284,33 @@ export function StickerGallery() {
           )}
         </div>
 
+        {/* Tag Filter Buttons */}
+        {popularTags.length > 0 && (
+          <div className="mb-6">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={selectedTag === "all" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedTag("all")}
+                className="h-8"
+              >
+                All
+              </Button>
+              {popularTags.slice(0, 10).map(({ tag, count }) => (
+                <Button
+                  key={tag}
+                  variant={selectedTag === tag ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedTag(tag)}
+                  className="h-8"
+                >
+                  #{tag} ({count})
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Results Info and Size Controls */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-sm text-muted-foreground">
@@ -297,14 +322,11 @@ export function StickerGallery() {
                 >
                   {selectedStickers.size} of {filteredStickers.length} selected
                 </Badge>
-                {selectedCategory !== "all" && (
+                {selectedTag !== "all" && (
                   <span className="text-muted-foreground">
                     from{" "}
                     <span className="font-medium">
-                      {
-                        categories.find((cat) => cat.id === selectedCategory)
-                          ?.name
-                      }
+                      #{selectedTag}
                     </span>
                   </span>
                 )}
@@ -318,15 +340,12 @@ export function StickerGallery() {
               <>
                 {filteredStickers.length} sticker
                 {filteredStickers.length !== 1 ? "s" : ""}
-                {selectedCategory !== "all" && (
+                {selectedTag !== "all" && (
                   <span className="hidden sm:inline">
                     {" "}
-                    in{" "}
+                    tagged with{" "}
                     <span className="font-medium">
-                      {
-                        categories.find((cat) => cat.id === selectedCategory)
-                          ?.name
-                      }
+                      #{selectedTag}
                     </span>
                   </span>
                 )}
@@ -374,10 +393,6 @@ export function StickerGallery() {
                 key={sticker.id}
                 id={sticker.id}
                 name={sticker.name}
-                category={
-                  categories.find((cat) => cat.id === sticker.category)?.name ||
-                  sticker.category
-                }
                 imageUrl={sticker.file_url}
                 downloadCount={sticker.download_count}
                 tags={sticker.tags || []}
@@ -394,13 +409,13 @@ export function StickerGallery() {
             <div className="text-6xl mb-4">🔍</div>
             <h3 className="text-xl font-semibold mb-2">No stickers found</h3>
             <p className="text-muted-foreground mb-4">
-              Try adjusting your search or category filter to find what
+              Try adjusting your search or tag filter to find what
               you&apos;re looking for.
             </p>
             <Button
               onClick={() => {
                 setSearchQuery("");
-                setSelectedCategory("all");
+                setSelectedTag("all");
               }}
             >
               Clear Filters

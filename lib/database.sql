@@ -9,7 +9,6 @@ CREATE TABLE public.stickers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
     slug VARCHAR(255) UNIQUE NOT NULL,
-    category VARCHAR(100) NOT NULL,
     tags TEXT[], -- PostgreSQL array for tags
     file_url TEXT NOT NULL,
     thumbnail_url TEXT NOT NULL,
@@ -32,7 +31,6 @@ CREATE TABLE public.downloads (
 );
 
 -- Indexes for better performance
-CREATE INDEX idx_stickers_category ON public.stickers(category);
 CREATE INDEX idx_stickers_tags ON public.stickers USING GIN(tags);
 CREATE INDEX idx_stickers_created_at ON public.stickers(created_at DESC);
 CREATE INDEX idx_downloads_sticker_id ON public.downloads(sticker_id);
@@ -82,11 +80,11 @@ CREATE POLICY "Allow public read access to stickers" ON public.stickers
 CREATE POLICY "Allow public insert to downloads" ON public.downloads
     FOR INSERT WITH CHECK (true);
 
--- Sample categories for MVP
-INSERT INTO public.stickers (name, slug, category, tags, file_url, thumbnail_url, file_size, file_format, width, height) VALUES 
-('Laughing Face', 'laughing-face', 'funny-emoji', ARRAY['happy', 'laugh', 'emoji'], '', '', 0, 'webp', 512, 512),
-('Thumbs Up', 'thumbs-up', 'reactions', ARRAY['approval', 'good', 'reaction'], '', '', 0, 'webp', 512, 512),
-('Crying Laughing', 'crying-laughing', 'memes', ARRAY['funny', 'lol', 'meme'], '', '', 0, 'webp', 512, 512),
-('Heart Eyes', 'heart-eyes', 'expressions', ARRAY['love', 'heart', 'emoji'], '', '', 0, 'webp', 512, 512),
-('Cute Cat', 'cute-cat', 'animals', ARRAY['cat', 'cute', 'animal'], '', '', 0, 'webp', 512, 512)
+-- Sample tag-based stickers for MVP
+INSERT INTO public.stickers (name, slug, tags, file_url, thumbnail_url, file_size, file_format, width, height) VALUES 
+('Laughing Face', 'laughing-face', ARRAY['happy', 'laugh', 'emoji', 'funny'], '', '', 0, 'webp', 512, 512),
+('Thumbs Up', 'thumbs-up', ARRAY['approval', 'good', 'reaction', 'thumbs'], '', '', 0, 'webp', 512, 512),
+('Crying Laughing', 'crying-laughing', ARRAY['funny', 'lol', 'meme', 'laugh'], '', '', 0, 'webp', 512, 512),
+('Heart Eyes', 'heart-eyes', ARRAY['love', 'heart', 'emoji', 'cute'], '', '', 0, 'webp', 512, 512),
+('Cute Cat', 'cute-cat', ARRAY['cat', 'cute', 'animal', 'pet'], '', '', 0, 'webp', 512, 512)
 ON CONFLICT (slug) DO NOTHING;

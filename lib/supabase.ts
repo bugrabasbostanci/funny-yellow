@@ -22,7 +22,6 @@ export type Database = {
           id: string;
           name: string;
           slug: string;
-          category: string;
           tags: string[] | null;
           file_url: string;
           thumbnail_url: string;
@@ -38,7 +37,6 @@ export type Database = {
           id?: string;
           name: string;
           slug: string;
-          category: string;
           tags?: string[] | null;
           file_url: string;
           thumbnail_url: string;
@@ -54,7 +52,6 @@ export type Database = {
           id?: string;
           name?: string;
           slug?: string;
-          category?: string;
           tags?: string[] | null;
           file_url?: string;
           thumbnail_url?: string;

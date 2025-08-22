@@ -17,7 +17,6 @@ import { SimplePlatformDetection } from "@/lib/simple-platform-detection";
 interface StickerCardProps {
   id: string;
   name: string;
-  category: string;
   imageUrl: string;
   downloadCount: number;
   tags?: string[];
@@ -32,7 +31,6 @@ interface StickerCardProps {
 export function StickerCard({
   id,
   name,
-  category,
   imageUrl,
   downloadCount,
   tags,
@@ -198,8 +196,7 @@ export function StickerCard({
               />
             </div>
             <div className="space-y-3">
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>Category: {category}</span>
+              <div className="flex items-center justify-end text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <span>{downloadCount.toLocaleString()} downloads</span>
                   {downloadCount > 20000 && (

@@ -22,49 +22,36 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
 
 const stickersDir = path.join(__dirname, '../public/stickers/webp');
 
-// Sticker metadata - mapping file names to categories and names
-const stickerMetadata = {
-  'agent-sticker.webp': { name: 'Secret Agent', category: 'characters', tags: ['agent', 'spy', 'cool', 'sunglasses', 'secret', 'professional'] },
-  'angry-walking-sticker.webp': { name: 'Angry Walk', category: 'emotions', tags: ['angry', 'mad', 'walking', 'rage', 'furious', 'storm-off'] },
-  'binoculars-sticker.webp': { name: 'Watching', category: 'gestures', tags: ['watching', 'looking', 'binoculars', 'curious', 'spying', 'observing'] },
-  'bowing-down-sticker.webp': { name: 'Bowing', category: 'gestures', tags: ['bow', 'respect', 'sorry', 'apologize', 'humble', 'thank-you'] },
-  'covering-ear-sticker.webp': { name: 'Cannot Hear', category: 'reactions', tags: ['deaf', 'cannot-hear', 'ignore', 'block', 'cover-ears', 'refuse-listen'] },
-  'crazy-sticker.webp': { name: 'Going Crazy', category: 'emotions', tags: ['crazy', 'insane', 'wild', 'excited', 'hyper', 'mad'] },
-  'cute-manga-sticker.webp': { name: 'Cute Manga', category: 'emotions', tags: ['cute', 'manga', 'sweet', 'adorable', 'kawaii', 'anime'] },
-  'denying-sticker.webp': { name: 'Refusing', category: 'reactions', tags: ['no', 'refuse', 'deny', 'reject', 'negative', 'disagree'] },
-  'depressed-sticker.webp': { name: 'Depressed', category: 'emotions', tags: ['sad', 'depressed', 'down', 'blue', 'unhappy', 'melancholy'] },
-  'despair-sticker.webp': { name: 'In Despair', category: 'emotions', tags: ['despair', 'hopeless', 'devastated', 'crushed', 'defeated', 'broken'] },
-  'eyelid-pulling-sticker.webp': { name: 'Mocking', category: 'gestures', tags: ['mock', 'tease', 'silly', 'childish', 'tongue', 'playful'] },
-  'face-palm-sticker.webp': { name: 'Facepalm', category: 'reactions', tags: ['facepalm', 'disappointed', 'frustrated', 'embarrassed', 'annoyed', 'doh'] },
-  'feet-up-sticker.webp': { name: 'Relaxing', category: 'gestures', tags: ['relax', 'chill', 'rest', 'comfortable', 'lazy', 'feet-up'] },
-  'flower-sticker.webp': { name: 'Flower Gift', category: 'gestures', tags: ['flower', 'gift', 'romantic', 'sweet', 'love', 'present'] },
-  'giving-hand-sticker.webp': { name: 'Helping Hand', category: 'gestures', tags: ['help', 'support', 'giving', 'assistance', 'hand', 'offer'] },
-  'hand-on-cheek-sticker.webp': { name: 'Thinking', category: 'gestures', tags: ['thinking', 'pondering', 'contemplating', 'wondering', 'curious', 'thoughtful'] },
-  'hiding-smile-sticker.webp': { name: 'Shy Smile', category: 'emotions', tags: ['shy', 'bashful', 'cute', 'modest', 'embarrassed', 'sweet'] },
-  'hope-sticker.webp': { name: 'Hopeful', category: 'emotions', tags: ['hope', 'optimistic', 'positive', 'bright', 'cheerful', 'hopeful'] },
-  'middle-finger-sticker.webp': { name: 'Middle Finger', category: 'gestures', tags: ['rude', 'angry', 'offensive', 'middle-finger', 'mad', 'insult'] },
-  'nervous-sticker.webp': { name: 'Nervous', category: 'emotions', tags: ['nervous', 'anxious', 'worried', 'scared', 'uncomfortable', 'fidgety'] },
-  'pointing-eyes-sticker.webp': { name: 'Watching You', category: 'gestures', tags: ['watching', 'suspicious', 'pointing', 'alert', 'aware', 'vigilant'] },
-  'ponder-sticker.webp': { name: 'Deep Thinking', category: 'emotions', tags: ['thinking', 'ponder', 'deep', 'philosophical', 'contemplating', 'wise'] },
-  'poor-sticker.webp': { name: 'Poor Me', category: 'emotions', tags: ['poor', 'sad', 'pity', 'broke', 'unfortunate', 'sympathy'] },
-  'refuse-sticker.webp': { name: 'Strong Refuse', category: 'reactions', tags: ['refuse', 'no-way', 'absolutely-not', 'reject', 'strong-no', 'adamant'] },
-  'rose-sticker.webp': { name: 'Rose Gift', category: 'gestures', tags: ['rose', 'romantic', 'love', 'flower', 'gift', 'valentine'] },
-  'rubbing-belly-sticker.webp': { name: 'Satisfied', category: 'emotions', tags: ['satisfied', 'full', 'content', 'happy', 'pleased', 'belly'] },
-  'shinny-smile-sticker.webp': { name: 'Shiny Smile', category: 'emotions', tags: ['happy', 'bright', 'shiny', 'cheerful', 'radiant', 'glowing'] },
-  'side-eye-sticker.webp': { name: 'Side Eye', category: 'reactions', tags: ['suspicious', 'skeptical', 'side-eye', 'doubtful', 'judging', 'questioning'] },
-  'sly-sticker.webp': { name: 'Sly', category: 'emotions', tags: ['sly', 'sneaky', 'mischievous', 'cunning', 'devious', 'clever'] },
-  'small-size-sticker.webp': { name: 'Tiny Me', category: 'emotions', tags: ['small', 'tiny', 'humble', 'insignificant', 'modest', 'little'] },
-  'spy-sticker.webp': { name: 'Spy', category: 'characters', tags: ['spy', 'detective', 'investigate', 'secret', 'stealth', 'undercover'] },
-  'suspicious-sticker.webp': { name: 'Suspicious', category: 'reactions', tags: ['suspicious', 'doubtful', 'skeptical', 'questioning', 'wary', 'cautious'] },
-  'thumos-down-sticker.webp': { name: 'Thumbs Down', category: 'reactions', tags: ['thumbs-down', 'disapproval', 'bad', 'negative', 'dislike', 'reject'] },
-  'thump-up-winking-witcker.webp': { name: 'Thumbs Up Wink', category: 'reactions', tags: ['thumbs-up', 'wink', 'approval', 'good', 'positive', 'cool'] },
-  'thumps-up-sticker.webp': { name: 'Thumbs Up', category: 'reactions', tags: ['thumbs-up', 'approval', 'good', 'positive', 'like', 'agree'] },
-  'touching-nose-sticker.webp': { name: 'Nose Touch', category: 'gestures', tags: ['nose', 'touch', 'shy', 'embarrassed', 'cute', 'bashful'] },
-  'villain-sticker.webp': { name: 'Villain', category: 'characters', tags: ['villain', 'evil', 'bad', 'dark', 'menacing', 'antagonist'] },
-  'wink-fingers-sticker.webp': { name: 'Finger Guns', category: 'gestures', tags: ['finger-guns', 'cool', 'confident', 'pointing', 'smooth', 'playful'] },
-  'wonder-female-sticker.webp': { name: 'Wonder Woman', category: 'characters', tags: ['superhero', 'strong', 'powerful', 'woman', 'hero', 'confident'] },
-  'yuck-face-sticker.webp': { name: 'Disgusted', category: 'reactions', tags: ['disgusted', 'yuck', 'gross', 'eww', 'nasty', 'repulsed'] }
-};
+// Load metadata from generated JSON file
+function loadStickerMetadata() {
+  try {
+    const metadataPath = path.join(__dirname, 'sticker-metadata.json');
+    if (fs.existsSync(metadataPath)) {
+      const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+      console.log(`📋 Loaded metadata for ${metadata.length} stickers`);
+      
+      // Convert array to filename-keyed object for compatibility
+      const keyedMetadata = {};
+      metadata.forEach(sticker => {
+        const filename = path.basename(sticker.file_url).replace('.png', '.webp');
+        keyedMetadata[filename] = {
+          name: sticker.name,
+          tags: sticker.tags
+        };
+      });
+      
+      return keyedMetadata;
+    } else {
+      console.warn('⚠️ No metadata file found, using fallback');
+      return {};
+    }
+  } catch (error) {
+    console.error('❌ Error loading metadata:', error);
+    return {};
+  }
+}
+
+const stickerMetadata = loadStickerMetadata();
 
 async function setupStorageBucket() {
   try {
@@ -126,8 +113,7 @@ async function uploadSticker(filePath, fileName) {
 
     const metadata = stickerMetadata[fileName] || { 
       name: fileName.replace('.webp', ''), 
-      category: 'misc', 
-      tags: [] 
+      tags: ['emoji', 'reaction'] 
     };
 
     // First, check if the sticker already exists
@@ -163,7 +149,6 @@ async function uploadSticker(filePath, fileName) {
       const stickerRecord = {
         name: metadata.name,
         slug: metadata.name.toLowerCase().replace(/\s+/g, '-'),
-        category: metadata.category,
         tags: metadata.tags,
         file_url: urlData.publicUrl,
         thumbnail_url: urlData.publicUrl,

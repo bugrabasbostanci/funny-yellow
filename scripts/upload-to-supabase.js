@@ -16,29 +16,36 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const stickersDir = path.join(__dirname, '../public/stickers/webp');
 
-// Sticker metadata - mapping file names to categories and names
-const stickerMetadata = {
-  'happy-face.webp': { name: 'Happy Face', category: 'funny-emoji', tags: ['happy', 'smile', 'positive'] },
-  'thumbs-up.webp': { name: 'Thumbs Up', category: 'reactions', tags: ['good', 'approval', 'like'] },
-  'crying-laugh.webp': { name: 'Crying Laugh', category: 'memes', tags: ['funny', 'lol', 'tears'] },
-  'heart-eyes.webp': { name: 'Heart Eyes', category: 'expressions', tags: ['love', 'heart', 'crush'] },
-  'cute-cat.webp': { name: 'Cute Cat', category: 'animals', tags: ['cat', 'cute', 'pet'] },
-  'winking-face.webp': { name: 'Winking Face', category: 'funny-emoji', tags: ['wink', 'flirt', 'secret'] },
-  'angry-face.webp': { name: 'Angry Face', category: 'reactions', tags: ['angry', 'mad', 'rage'] },
-  'shocked-face.webp': { name: 'Shocked Face', category: 'reactions', tags: ['surprised', 'wow', 'shock'] },
-  'cool-sunglasses.webp': { name: 'Cool Sunglasses', category: 'expressions', tags: ['cool', 'sunglasses', 'awesome'] },
-  'party-hat.webp': { name: 'Party Hat', category: 'celebration', tags: ['party', 'celebration', 'fun'] },
-  'tired-face.webp': { name: 'Tired Face', category: 'expressions', tags: ['tired', 'sleepy', 'exhausted'] },
-  'money-eyes.webp': { name: 'Money Eyes', category: 'expressions', tags: ['money', 'rich', 'greedy'] },
-  'rainbow.webp': { name: 'Rainbow', category: 'nature', tags: ['rainbow', 'colorful', 'weather'] },
-  'fire-emoji.webp': { name: 'Fire Emoji', category: 'expressions', tags: ['fire', 'hot', 'lit'] },
-  'pizza-slice.webp': { name: 'Pizza Slice', category: 'food', tags: ['pizza', 'food', 'delicious'] },
-  'peace-sign.webp': { name: 'Peace Sign', category: 'expressions', tags: ['peace', 'hippie', 'love'] },
-  'rocket.webp': { name: 'Rocket', category: 'objects', tags: ['rocket', 'space', 'launch'] },
-  'star-eyes.webp': { name: 'Star Eyes', category: 'expressions', tags: ['star', 'amazed', 'starstruck'] },
-  'muscle-arm.webp': { name: 'Muscle Arm', category: 'expressions', tags: ['strong', 'muscle', 'power'] },
-  'celebration.webp': { name: 'Celebration', category: 'celebration', tags: ['party', 'celebrate', 'happy'] }
-};
+// Load metadata from generated JSON file
+function loadStickerMetadata() {
+  try {
+    const metadataPath = path.join(__dirname, 'sticker-metadata.json');
+    if (fs.existsSync(metadataPath)) {
+      const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+      console.log(`📋 Loaded metadata for ${metadata.length} stickers`);
+      
+      // Convert array to filename-keyed object for compatibility
+      const keyedMetadata = {};
+      metadata.forEach(sticker => {
+        const filename = path.basename(sticker.file_url).replace('.png', '.webp');
+        keyedMetadata[filename] = {
+          name: sticker.name,
+          tags: sticker.tags
+        };
+      });
+      
+      return keyedMetadata;
+    } else {
+      console.warn('⚠️ No metadata file found, using fallback');
+      return {};
+    }
+  } catch (error) {
+    console.error('❌ Error loading metadata:', error);
+    return {};
+  }
+}
+
+const stickerMetadata = loadStickerMetadata();
 
 async function uploadSticker(filePath, fileName) {
   try {
@@ -68,15 +75,13 @@ async function uploadSticker(filePath, fileName) {
 
     const metadata = stickerMetadata[fileName] || { 
       name: fileName.replace('.webp', ''), 
-      category: 'misc', 
-      tags: [] 
+      tags: ['emoji', 'reaction'] 
     };
 
     // Insert sticker record into database
     const stickerRecord = {
       name: metadata.name,
       slug: metadata.name.toLowerCase().replace(/\s+/g, '-'),
-      category: metadata.category,
       tags: metadata.tags,
       file_url: urlData.publicUrl,
       thumbnail_url: urlData.publicUrl, // Same as file_url for MVP

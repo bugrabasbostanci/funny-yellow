@@ -44,7 +44,7 @@ export function DownloadOptionsModal({ stickers, isOpen, onClose }: DownloadOpti
           break;
         case 'whatsapp':
           const stickerPack = await WhatsAppStickerService.createStickerPack(
-            stickers.map(s => ({ ...s, category: s.category || 'default' })),
+            stickers,
             `Custom Pack ${new Date().toLocaleDateString()}`
           );
           await WhatsAppStickerService.downloadStickerPack(stickerPack);

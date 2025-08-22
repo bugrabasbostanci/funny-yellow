@@ -1,8 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Github, Heart } from "lucide-react";
+import { Github, Heart, Settings } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 export function Header() {
   return (
@@ -42,6 +43,17 @@ export function Header() {
 
           {/* Action Buttons */}
           <div className="flex items-center space-x-2">
+            <Link href="/admin">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="hidden sm:flex items-center space-x-2 text-muted-foreground hover:text-foreground"
+              >
+                <Settings className="h-4 w-4" />
+                <span>Admin</span>
+              </Button>
+            </Link>
+
             <Button
               variant="ghost"
               size="sm"

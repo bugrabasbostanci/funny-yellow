@@ -11,7 +11,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Upload, X } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { 
+  ArrowLeft, 
+  Upload, 
+  X, 
+  CheckCircle, 
+  AlertCircle, 
+  Clock, 
+  Zap,
+  FileImage,
+  Database,
+  ImageIcon
+} from "lucide-react";
 import Link from "next/link";
 
 interface StickerFile {
@@ -20,9 +33,68 @@ interface StickerFile {
   tags: string[];
 }
 
+interface ProcessingStep {
+  id: string;
+  name: string;
+  description: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+interface ProcessingResult {
+  originalName: string;
+  status: 'success' | 'failed';
+  error?: string;
+  stickerId?: string;
+  webpUrl?: string;
+  pngUrl?: string;
+}
+
 export default function AdminUpload() {
   const [selectedFiles, setSelectedFiles] = useState<StickerFile[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingProgress, setProcessingProgress] = useState(0);
+  const [processingStep, setProcessingStep] = useState(0);
+  const [processResults, setProcessResults] = useState<ProcessingResult[]>([]);
+  const [currentBatch, setCurrentBatch] = useState<string | null>(null);
+
+  const processingSteps: ProcessingStep[] = [
+    {
+      id: 'validation',
+      name: 'Validation',
+      description: 'Checking file formats and sizes',
+      status: 'pending',
+      icon: FileImage
+    },
+    {
+      id: 'optimization',
+      name: 'Optimization',
+      description: 'Converting to WebP and PNG formats',
+      status: 'pending',
+      icon: Zap
+    },
+    {
+      id: 'storage',
+      name: 'Storage Upload',
+      description: 'Uploading to Supabase Storage',
+      status: 'pending',
+      icon: Upload
+    },
+    {
+      id: 'database',
+      name: 'Database Commit',
+      description: 'Saving metadata and URLs',
+      status: 'pending',
+      icon: Database
+    },
+    {
+      id: 'completion',
+      name: 'Completion',
+      description: 'Finalizing and cleanup',
+      status: 'pending',
+      icon: CheckCircle
+    }
+  ];
 
   const commonTags = [
     "funny",
@@ -82,15 +154,22 @@ export default function AdminUpload() {
     updateSticker(stickerIndex, "tags", newTags);
   };
 
-  const handleUpload = async () => {
+  // Removed unused simulateProcessingSteps function
+
+  const handleBatchProcess = async () => {
     if (selectedFiles.length === 0) {
       alert("Lütfen en az bir dosya seçin");
       return;
     }
 
-    setIsUploading(true);
+    setIsProcessing(true);
+    setProcessingProgress(0);
+    setProcessingStep(0);
+    setProcessResults([]);
+    setCurrentBatch(null);
+
     try {
-      // Prepare FormData
+      // Prepare FormData for batch processing
       const formData = new FormData();
       
       // Add files
@@ -108,36 +187,84 @@ export default function AdminUpload() {
       });
       formData.append('metadata', JSON.stringify(metadata));
 
-      // Upload files
-      const response = await fetch('/api/admin/upload-files', {
+      // Start visual progress simulation
+      const progressInterval = setInterval(() => {
+        setProcessingProgress(prev => {
+          if (prev >= 95) return prev;
+          return prev + Math.random() * 10;
+        });
+      }, 500);
+
+      const stepInterval = setInterval(() => {
+        setProcessingStep(prev => {
+          if (prev >= processingSteps.length - 1) return prev;
+          return prev + 1;
+        });
+      }, 1200);
+
+      // Call the atomic batch processing API
+      const response = await fetch('/api/admin/process-sticker-batch', {
         method: 'POST',
         body: formData
       });
 
+      clearInterval(progressInterval);
+      clearInterval(stepInterval);
+
       const result = await response.json();
       
       if (!response.ok) {
-        throw new Error(result.error || 'Upload failed');
+        throw new Error(result.error || 'Batch processing failed');
       }
 
+      // Complete the progress
+      setProcessingProgress(100);
+      setProcessingStep(processingSteps.length);
+      setCurrentBatch(result.batchId);
+      setProcessResults(result.results || []);
+
       // Show success message
-      alert(`✅ Upload başarılı!\n${result.uploaded}/${result.total} dosya yüklendi`);
-      
-      // Show errors if any
-      if (result.errors && result.errors.length > 0) {
-        console.warn('Upload errors:', result.errors);
-        alert(`⚠️ Bazı dosyalarda hata: ${result.errors.join(', ')}`);
-      }
+      const { summary } = result;
+      alert(`✅ Batch işlemi tamamlandı!\n\n📊 Sonuçlar:\n✅ Başarılı: ${summary.successful}\n❌ Hatalı: ${summary.failed}\n📝 Toplam: ${summary.total}\n\nBatch ID: ${result.batchId}`);
       
       // Clear form on success
-      setSelectedFiles([]);
+      if (summary.successful > 0) {
+        setSelectedFiles([]);
+      }
       
     } catch (error) {
-      console.error('Upload error:', error);
-      alert(`❌ Upload hatası: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`);
+      console.error('Batch processing error:', error);
+      alert(`❌ Batch işlemi hatası: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`);
+      
+      // Reset progress on error
+      setProcessingProgress(0);
+      setProcessingStep(0);
+      
     } finally {
-      setIsUploading(false);
+      setIsProcessing(false);
     }
+  };
+
+  const getStepStatus = (stepIndex: number) => {
+    if (stepIndex < processingStep) return 'completed';
+    if (stepIndex === processingStep && isProcessing) return 'processing';
+    return 'pending';
+  };
+
+  const getStepIcon = (step: ProcessingStep, stepIndex: number) => {
+    const status = getStepStatus(stepIndex);
+    const IconComponent = step.icon;
+    
+    if (status === 'completed') return <CheckCircle className="h-5 w-5 text-green-600" />;
+    if (status === 'processing') return <IconComponent className="h-5 w-5 text-blue-600 animate-pulse" />;
+    return <IconComponent className="h-5 w-5 text-gray-400" />;
+  };
+
+  const getStepBadgeColor = (stepIndex: number) => {
+    const status = getStepStatus(stepIndex);
+    if (status === 'completed') return 'bg-green-100 text-green-800';
+    if (status === 'processing') return 'bg-blue-100 text-blue-800';
+    return 'bg-gray-100 text-gray-600';
   };
 
   return (
@@ -160,75 +287,195 @@ export default function AdminUpload() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
+        {/* Single Column Layout for Better Focus */}
+        <div className="space-y-6">
+          
+          {/* File Selection & Metadata */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileImage className="h-5 w-5" />
+                Batch Sticker Upload
+              </CardTitle>
+              <CardDescription>
+                Secure atomic processing - upload, optimize, and save in one operation
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="file-upload">Select Sticker Files</Label>
+                  <Input
+                    id="file-upload"
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="mt-1"
+                    disabled={isProcessing}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <div className="space-y-1">
+                    <p>• Supports: JPG, PNG, WebP, SVG</p>
+                    <p>• Auto-optimizes to 512x512 WebP + PNG</p>
+                    <p>• Generates metadata automatically</p>
+                  </div>
+                  {selectedFiles.length > 0 && (
+                    <Badge variant="secondary" className="ml-4">
+                      {selectedFiles.length} files selected
+                    </Badge>
+                  )}
+                </div>
+
+                {selectedFiles.length > 0 && !isProcessing && (
+                  <Button
+                    onClick={handleBatchProcess}
+                    className="w-full h-12 text-base font-medium"
+                    size="lg"
+                  >
+                    <Zap className="h-5 w-5 mr-2" />
+                    Process {selectedFiles.length} Stickers
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Processing Pipeline Visualization */}
+          {isProcessing && (
             <Card>
               <CardHeader>
-                <CardTitle>Dosya Seçimi</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 animate-spin" />
+                  Processing Pipeline
+                </CardTitle>
                 <CardDescription>
-                  Jpg, PNG, WebP formatlarında dosyalar seçin
+                  Batch ID: {currentBatch || 'Generating...'}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="file-upload">Sticker Dosyaları</Label>
-                    <Input
-                      id="file-upload"
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={handleFileSelect}
-                      className="mt-1"
-                    />
+                  {/* Overall Progress */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Overall Progress</span>
+                      <span>{Math.round(processingProgress)}%</span>
+                    </div>
+                    <Progress value={processingProgress} className="h-2" />
                   </div>
 
-                  <div className="text-sm text-gray-500">
-                    <p>• Minimum 300x300 boyut</p>
-                    <p>• Yüksek çözünürlük tercih</p>
-                    <p>• Script 512x512&apos;ye optimize eder</p>
+                  {/* Step-by-Step Progress */}
+                  <div className="space-y-3">
+                    {processingSteps.map((step, index) => (
+                      <div 
+                        key={step.id}
+                        className={`flex items-center gap-3 p-3 rounded-lg border ${
+                          getStepStatus(index) === 'completed' 
+                            ? 'bg-green-50 border-green-200' 
+                            : getStepStatus(index) === 'processing'
+                            ? 'bg-blue-50 border-blue-200'
+                            : 'bg-gray-50 border-gray-200'
+                        }`}
+                      >
+                        <div className="flex-shrink-0">
+                          {getStepIcon(step, index)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-sm">{step.name}</p>
+                            <Badge 
+                              variant="secondary" 
+                              className={`text-xs ${getStepBadgeColor(index)}`}
+                            >
+                              {getStepStatus(index)}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-gray-600 mt-1">{step.description}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-
-                  {selectedFiles.length > 0 && (
-                    <Button
-                      onClick={handleUpload}
-                      disabled={isUploading}
-                      className="w-full"
-                    >
-                      <Upload className="h-4 w-4 mr-2" />
-                      {isUploading
-                        ? "Yükleniyor..."
-                        : `${selectedFiles.length} Sticker Yükle`}
-                    </Button>
-                  )}
                 </div>
               </CardContent>
             </Card>
-          </div>
+          )}
 
-          <div className="lg:col-span-2">
-            {selectedFiles.length === 0 ? (
-              <Card className="h-64 flex items-center justify-center">
-                <CardContent>
-                  <div className="text-center text-gray-500">
-                    <Upload className="h-12 w-12 mx-auto mb-4" />
-                    <p>Sticker dosyalarını seçin</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                {selectedFiles.map((sticker, index) => (
-                  <Card key={index}>
-                    <CardHeader className="pb-3">
-                      <div className="flex justify-between items-start">
+          {/* Results Display */}
+          {processResults.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  Processing Results
+                </CardTitle>
+                <CardDescription>
+                  Batch completed with detailed file-by-file results
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {processResults.map((result, index) => (
+                    <div 
+                      key={index}
+                      className={`flex items-center justify-between p-3 rounded-lg border ${
+                        result.status === 'success' 
+                          ? 'bg-green-50 border-green-200' 
+                          : 'bg-red-50 border-red-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {result.status === 'success' ? (
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <AlertCircle className="h-4 w-4 text-red-600" />
+                        )}
                         <div>
-                          <CardTitle className="text-lg">
-                            {sticker.file.name}
-                          </CardTitle>
-                          <CardDescription>
-                            {(sticker.file.size / 1024).toFixed(1)} KB
-                          </CardDescription>
+                          <p className="font-medium text-sm">{result.originalName}</p>
+                          {result.error && (
+                            <p className="text-xs text-red-600 mt-1">{result.error}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {result.status === 'success' && (
+                          <>
+                            <Badge variant="outline" className="text-xs">WebP</Badge>
+                            <Badge variant="outline" className="text-xs">PNG</Badge>
+                            <Badge variant="secondary" className="text-xs">ID: {result.stickerId?.slice(0, 8)}</Badge>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* File Metadata Editing */}
+          {selectedFiles.length > 0 && !isProcessing && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ImageIcon className="h-5 w-5" />
+                  Customize Metadata (Optional)
+                </CardTitle>
+                <CardDescription>
+                  Modify names and tags, or leave blank for auto-generation
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4 max-h-96 overflow-y-auto">
+                  {selectedFiles.map((sticker, index) => (
+                    <div key={index} className="border rounded-lg p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{sticker.file.name}</p>
+                          <p className="text-xs text-gray-500">
+                            {(sticker.file.size / 1024).toFixed(1)} KB • {sticker.file.type}
+                          </p>
                         </div>
                         <Button
                           variant="ghost"
@@ -238,45 +485,43 @@ export default function AdminUpload() {
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <Label htmlFor={`name-${index}`}>Sticker Adı</Label>
-                        <Input
-                          id={`name-${index}`}
-                          value={sticker.name}
-                          onChange={(e) =>
-                            updateSticker(index, "name", e.target.value)
-                          }
-                          placeholder="Sticker adı"
-                        />
-                      </div>
-
-                      <div>
-                        <Label>Tags</Label>
-                        <div className="flex flex-wrap gap-2 mt-2 mb-3">
-                          {sticker.tags.map((tag, tagIndex) => (
-                            <div
-                              key={tagIndex}
-                              className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-sm flex items-center gap-1"
-                            >
-                              {tag}
-                              <button
-                                onClick={() => removeTag(index, tagIndex)}
-                                className="text-blue-600 hover:text-blue-800"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </div>
-                          ))}
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor={`name-${index}`} className="text-xs">Display Name</Label>
+                          <Input
+                            id={`name-${index}`}
+                            value={sticker.name}
+                            onChange={(e) =>
+                              updateSticker(index, "name", e.target.value)
+                            }
+                            placeholder="Auto-generated from filename"
+                            className="mt-1"
+                          />
                         </div>
-
-                        <div className="space-y-2">
-                          <div className="flex flex-wrap gap-1 mb-2">
-                            <span className="text-xs text-gray-500 mr-2">
-                              Popüler:
-                            </span>
-                            {commonTags.slice(0, 8).map((tag) => (
+                        
+                        <div>
+                          <Label className="text-xs">Tags</Label>
+                          <div className="flex flex-wrap gap-1 mt-1 mb-2">
+                            {sticker.tags.map((tag, tagIndex) => (
+                              <Badge 
+                                key={tagIndex}
+                                variant="secondary" 
+                                className="text-xs px-2 py-1 flex items-center gap-1"
+                              >
+                                {tag}
+                                <button
+                                  onClick={() => removeTag(index, tagIndex)}
+                                  className="hover:text-red-600"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            ))}
+                          </div>
+                          
+                          <div className="flex flex-wrap gap-1">
+                            {commonTags.slice(0, 6).map((tag) => (
                               <button
                                 key={tag}
                                 type="button"
@@ -292,25 +537,14 @@ export default function AdminUpload() {
                               </button>
                             ))}
                           </div>
-
-                          <Input
-                            placeholder="Özel tag ekle (Enter'a bas)"
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                addTag(index, e.currentTarget.value);
-                                e.currentTarget.value = "";
-                              }
-                            }}
-                          />
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

@@ -17,6 +17,7 @@ const fredoka = Fredoka({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://funnyyellow.com"),
   title: "Funny Yellow - Free WhatsApp Stickers | Download Instantly",
   description:
     "Make Chat Fun Again! 🎉 Download high-quality, funny stickers for WhatsApp instantly. 100% free sticker collection with easy WhatsApp integration.",

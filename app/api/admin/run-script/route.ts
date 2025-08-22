@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { spawn } from 'child_process';
+
+export const runtime = 'edge';
 
 const ALLOWED_SCRIPTS = [
   'optimize-stickers',
@@ -18,87 +19,14 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Use ReadableStream for server-sent events style response
-    const encoder = new TextEncoder();
-    
-    const readable = new ReadableStream({
-      start(controller) {
-        // Send initial status
-        controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ 
-            type: 'start', 
-            script, 
-            message: `Starting ${script}...` 
-          })}\n\n`)
-        );
-
-        const isWindows = process.platform === 'win32';
-        const command = isWindows ? 'npm.cmd' : 'npm';
-        const args = ['run', script];
-        
-        const child = spawn(command, args, {
-          cwd: process.cwd(),
-          stdio: ['pipe', 'pipe', 'pipe']
-        });
-
-        // Handle stdout
-        child.stdout?.on('data', (data) => {
-          const output = data.toString();
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ 
-              type: 'stdout', 
-              data: output.trim() 
-            })}\n\n`)
-          );
-        });
-
-        // Handle stderr
-        child.stderr?.on('data', (data) => {
-          const output = data.toString();
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ 
-              type: 'stderr', 
-              data: output.trim() 
-            })}\n\n`)
-          );
-        });
-
-        // Handle process completion
-        child.on('close', (code) => {
-          const success = code === 0;
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ 
-              type: 'end', 
-              success,
-              exitCode: code,
-              message: success 
-                ? `✅ ${script} completed successfully` 
-                : `❌ ${script} failed with exit code ${code}`
-            })}\n\n`)
-          );
-          controller.close();
-        });
-
-        // Handle errors
-        child.on('error', (error) => {
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ 
-              type: 'error', 
-              message: `Process error: ${error.message}` 
-            })}\n\n`)
-          );
-          controller.close();
-        });
-      }
-    });
-
-    return new Response(readable, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
-    });
+    // Edge runtime limitation: Can't spawn processes
+    // Return a mock response indicating the limitation
+    return NextResponse.json({
+      error: 'Script execution not available in edge runtime',
+      script,
+      message: 'Scripts must be run manually on server or use serverless functions',
+      limitation: 'Cloudflare Edge Runtime does not support child_process'
+    }, { status: 501 });
 
   } catch (error) {
     console.error('Run script error:', error);

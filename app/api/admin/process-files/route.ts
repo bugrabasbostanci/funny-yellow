@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { spawn } from 'child_process';
+
+export const runtime = 'edge';
 
 const SCRIPT_PIPELINE = [
   'optimize-stickers',
@@ -7,46 +8,16 @@ const SCRIPT_PIPELINE = [
   'convert-webp-to-png'
 ];
 
-async function runScript(scriptName: string): Promise<{success: boolean, output: string[], errors: string[]}> {
-  return new Promise((resolve) => {
-    const output: string[] = [];
-    const errors: string[] = [];
-    
-    const isWindows = process.platform === 'win32';
-    const command = isWindows ? 'npm.cmd' : 'npm';
-    const args = ['run', scriptName];
-    
-    const child = spawn(command, args, {
-      cwd: process.cwd(),
-      stdio: ['pipe', 'pipe', 'pipe']
-    });
-
-    child.stdout?.on('data', (data) => {
-      output.push(data.toString().trim());
-    });
-
-    child.stderr?.on('data', (data) => {
-      errors.push(data.toString().trim());
-    });
-
-    child.on('close', (code) => {
-      resolve({
-        success: code === 0,
-        output,
-        errors
-      });
-    });
-
-    child.on('error', (error) => {
-      errors.push(`Process error: ${error.message}`);
-      resolve({
-        success: false,
-        output,
-        errors
-      });
-    });
-  });
-}
+// Edge runtime limitation: Can't use child_process
+// This function would need to be implemented differently for production
+// async function runScript(scriptName: string): Promise<{success: boolean, output: string[], errors: string[]}> {
+//   // Simulate script execution for edge runtime compatibility
+//   return {
+//     success: false,
+//     output: [],
+//     errors: [`Edge runtime limitation: Cannot execute ${scriptName}`]
+//   };
+// }
 
 export async function POST(request: NextRequest) {
   try {
@@ -62,109 +33,18 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const encoder = new TextEncoder();
-    
-    const readable = new ReadableStream({
-      async start(controller) {
-        // Send pipeline start message
-        controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ 
-            type: 'pipeline_start', 
-            scripts,
-            message: `Starting processing pipeline with ${scripts.length} steps...` 
-          })}\n\n`)
-        );
-
-        let allSuccess = true;
-        const results = [];
-
-        // Run each script in sequence
-        for (let i = 0; i < scripts.length; i++) {
-          const script = scripts[i];
-          
-          // Send step start message
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ 
-              type: 'step_start',
-              step: i + 1,
-              total: scripts.length,
-              script,
-              message: `Step ${i + 1}/${scripts.length}: Running ${script}...` 
-            })}\n\n`)
-          );
-
-          const result = await runScript(script);
-          results.push({ script, ...result });
-
-          // Send step output
-          for (const line of result.output) {
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify({ 
-                type: 'step_output',
-                script,
-                data: line 
-              })}\n\n`)
-            );
-          }
-
-          // Send step errors  
-          for (const error of result.errors) {
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify({ 
-                type: 'step_error',
-                script,
-                data: error 
-              })}\n\n`)
-            );
-          }
-
-          // Send step completion
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ 
-              type: 'step_complete',
-              step: i + 1,
-              script,
-              success: result.success,
-              message: result.success 
-                ? `✅ Step ${i + 1} (${script}) completed successfully` 
-                : `❌ Step ${i + 1} (${script}) failed`
-            })}\n\n`)
-          );
-
-          if (!result.success) {
-            allSuccess = false;
-            break; // Stop pipeline on first failure
-          }
-
-          // Small delay between scripts
-          if (i < scripts.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-          }
-        }
-
-        // Send pipeline completion
-        controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ 
-            type: 'pipeline_complete',
-            success: allSuccess,
-            results,
-            message: allSuccess 
-              ? `✅ Processing pipeline completed successfully!` 
-              : `❌ Processing pipeline failed`
-          })}\n\n`)
-        );
-
-        controller.close();
-      }
-    });
-
-    return new Response(readable, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
-    });
+    // Edge runtime limitation: Can't spawn processes
+    return NextResponse.json({
+      error: 'Pipeline execution not available in edge runtime',
+      scripts,
+      message: 'Processing pipeline must be run manually on server or use serverless functions',
+      limitation: 'Cloudflare Edge Runtime does not support child_process',
+      suggestedAlternatives: [
+        'Run scripts manually via SSH/terminal',
+        'Use GitHub Actions or CI/CD pipeline',
+        'Implement as separate serverless functions'
+      ]
+    }, { status: 501 });
 
   } catch (error) {
     console.error('Process files error:', error);

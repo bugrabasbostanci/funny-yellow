@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "convert-stickers": "node scripts/convert-stickers.js",
-    "optimize-stickers": "node scripts/optimize-stickers.js",
+    "optimize-stickers": "node scripts/download-and-optimize.js",
     "convert-webp-to-png": "node scripts/convert-webp-to-png.js",
     "upload-stickers": "node scripts/upload-to-supabase-admin.js",
     "setup-db": "node scripts/setup-database.js",

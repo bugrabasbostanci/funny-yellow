@@ -14,13 +14,32 @@ Bu klasör Funny Yellow sticker platformunun tüm dokümantasyonunu içerir.
 - Phase 5: Scale & Monetization (6-8 hafta)
 - Success metrics ve decision points
 
-#### 👨‍💼 [ADMIN-GUIDE-UPDATED.md](./ADMIN-GUIDE-UPDATED.md)  
-**Güncel admin sticker ekleme rehberi**
-- Sticker hazırlama süreci
-- Script kullanımı (`optimize-stickers`, `upload-stickers`, `convert-webp-to-png`)
-- Metadata yönetimi
-- Troubleshooting
-- Kalite kontrol checklist
+#### 👨‍💼 [admin/ADMIN-GUIDE.md](./admin/ADMIN-GUIDE.md)  
+**Ana admin rehberi - Web-based pipeline**
+- Web admin interface kullanımı
+- Atomic batch processing
+- Real-time progress monitoring
+- Error handling ve troubleshooting
+
+#### 🛠️ [admin/MANUAL-SCRIPT-UPLOAD.md](./admin/MANUAL-SCRIPT-UPLOAD.md)
+**Manuel script-based upload rehberi**
+- Komut satırı ile upload süreci
+- Script kullanımı (`optimize-stickers`, `upload-stickers`)
+- Advanced users için alternatif yöntem
+
+#### 🎨 [color-palette/colors.md](./color-palette/colors.md)
+**Proje renk paleti ve kullanım rehberi**
+- Primary ve secondary renkler
+- Gradient system
+- Component color usage
+- Accessibility guidelines
+
+#### 📊 [pagination-loading-strategy.md](./pagination-loading-strategy.md)
+**Pagination ve loading stratejisi**
+- Infinite scroll implementation
+- Performance optimization
+- Caching strategies
+- Mobile considerations
 
 #### 📋 [PRDs/main-prd.md](./PRDs/main-prd.md)
 **Ana product requirements document**
@@ -35,10 +54,10 @@ Bu klasör Funny Yellow sticker platformunun tüm dokümantasyonunu içerir.
 ## 🎯 MVP Durumu (Completed ✅)
 
 ### Tamamlanan Özellikler:
-- ✅ **Basit Sticker Galerisi**: Kategori + arama
+- ✅ **Sticker Galerisi**: Tag-based filtering + arama
 - ✅ **Platform-Akıllı İndirme**: PNG (desktop) + WebP (mobil)
 - ✅ **Supabase Entegrasyonu**: Real data + storage
-- ✅ **Admin Workflow**: Script-based management
+- ✅ **Web Admin Pipeline**: Atomic batch processing
 - ✅ **WhatsApp Uyumluluğu**: Çoklu format desteği
 
 ### Teknik Stack:
@@ -76,21 +95,26 @@ Bu klasör Funny Yellow sticker platformunun tüm dokümantasyonunu içerir.
 - ❌ mvp-plan.md → MVP tamamlandı
 - ❌ Çoklu PRD dosyalar → main-prd.md korundu
 - ❌ format/, notes/, create pack/ → İlgili bilgiler ana dosyalara taşındı
-- ❌ Tekrar eden admin guide'lar → ADMIN-GUIDE-UPDATED.md korundu
+- ❌ Tekrar eden admin guide'lar → Yeni yapıya göre düzenlendi
+- ❌ Outdated docs → Güncel dokümanlarla değiştirildi
 
 ### Aktif Dokümanlar:
 1. **FINAL-ROADMAP.md** - Gelecek planı
-2. **ADMIN-GUIDE-UPDATED.md** - Admin süreçleri  
-3. **PRDs/main-prd.md** - Product requirements
+2. **admin/ADMIN-GUIDE.md** - Web-based admin pipeline  
+3. **admin/MANUAL-SCRIPT-UPLOAD.md** - Script-based alternatif
+4. **color-palette/colors.md** - Renk paleti rehberi
+5. **pagination-loading-strategy.md** - Performance stratejisi
+6. **PRDs/main-prd.md** - Product requirements
 
 ---
 
 ## 💡 Kullanım Rehberi
 
 ### Yeni Admin Onboarding:
-1. `ADMIN-GUIDE-UPDATED.md` oku
-2. Environment variables setup
-3. İlk sticker upload test
+1. `admin/ADMIN-GUIDE.md` oku (web-based pipeline)
+2. Environment variables setup (.env.local)
+3. `/admin/upload` sayfasında test upload yap
+4. Advanced users: `admin/MANUAL-SCRIPT-UPLOAD.md` (isteğe bağlı)
 
 ### Gelecek Planning:
 1. `FINAL-ROADMAP.md` Phase 2'yi incele

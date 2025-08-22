@@ -1,11 +1,26 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Github, Heart, Settings } from "lucide-react";
+import { Github, Heart, Settings, LogOut } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
+import { AdminAuthModal } from "@/components/admin-auth-modal";
+import { useAdminAuth } from "@/lib/admin-auth-context";
 
 export function Header() {
+  const { isAuthenticated, login, logout } = useAdminAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  const handleAdminClick = () => {
+    if (isAuthenticated) {
+      // If authenticated, navigate to admin
+      window.location.href = "/admin";
+    } else {
+      // If not authenticated, show auth modal
+      setShowAuthModal(true);
+    }
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -32,16 +47,27 @@ export function Header() {
 
           {/* Action Buttons */}
           <div className="flex items-center space-x-2">
-            <Link href="/admin">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hidden sm:flex items-center space-x-2 text-muted-foreground hover:text-foreground"
+              onClick={handleAdminClick}
+            >
+              <Settings className="h-4 w-4" />
+              <span>Admin</span>
+            </Button>
+
+            {isAuthenticated && (
               <Button
                 variant="ghost"
                 size="sm"
                 className="hidden sm:flex items-center space-x-2 text-muted-foreground hover:text-foreground"
+                onClick={logout}
+                title="Admin çıkışı"
               >
-                <Settings className="h-4 w-4" />
-                <span>Admin</span>
+                <LogOut className="h-4 w-4" />
               </Button>
-            </Link>
+            )}
 
             <Button
               variant="ghost"
@@ -69,6 +95,12 @@ export function Header() {
           </div>
         </div>
       </div>
+      
+      <AdminAuthModal
+        open={showAuthModal}
+        onOpenChange={setShowAuthModal}
+        onAuthSuccess={login}
+      />
     </header>
   );
 }

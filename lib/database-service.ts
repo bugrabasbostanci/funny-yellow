@@ -1,5 +1,4 @@
 import { supabase, type Database } from "./supabase";
-import crypto from "crypto";
 import { getStickersByPack, type StickerPack } from "./pack-definitions";
 
 // Note: We're using the regular supabase client (anon key) from frontend
@@ -120,7 +119,12 @@ export class DatabaseService {
 
     try {
       // Hash IP address for privacy
-      const ipHash = crypto.createHash("sha256").update(ipAddress).digest("hex");
+      const encoder = new TextEncoder();
+      const data = encoder.encode(ipAddress);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      const ipHash = Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
 
       console.log(`🔍 Starting atomic download tracking for sticker: ${stickerId}`);
 
@@ -327,7 +331,12 @@ export class DatabaseService {
 
     try {
       // Hash IP address for privacy
-      const ipHash = crypto.createHash("sha256").update(ipAddress).digest("hex");
+      const encoder = new TextEncoder();
+      const data = encoder.encode(ipAddress);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      const ipHash = Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
 
       // Insert all download records in batch
       const downloadRecords = availableStickers.map(stickerId => ({

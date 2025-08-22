@@ -1,6 +1,6 @@
 "use client";
 
-export const runtime = 'edge';
+export const runtime = "edge";
 
 import { useState } from "react";
 import {
@@ -15,17 +15,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { 
-  ArrowLeft, 
-  Upload, 
-  X, 
-  CheckCircle, 
-  AlertCircle, 
-  Clock, 
+import {
+  ArrowLeft,
+  Upload,
+  X,
+  CheckCircle,
+  AlertCircle,
+  Clock,
   Zap,
   FileImage,
   Database,
-  ImageIcon
+  ImageIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -40,13 +40,13 @@ interface ProcessingStep {
   id: string;
   name: string;
   description: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: "pending" | "processing" | "completed" | "failed";
   icon: React.ComponentType<{ className?: string }>;
 }
 
 interface ProcessingResult {
   originalName: string;
-  status: 'success' | 'failed';
+  status: "success" | "failed";
   error?: string;
   stickerId?: string;
   webpUrl?: string;
@@ -63,53 +63,48 @@ export default function AdminUpload() {
 
   const processingSteps: ProcessingStep[] = [
     {
-      id: 'validation',
-      name: 'Validation',
-      description: 'Checking file formats and sizes',
-      status: 'pending',
-      icon: FileImage
+      id: "validation",
+      name: "Validation",
+      description: "Checking file formats and sizes",
+      status: "pending",
+      icon: FileImage,
     },
     {
-      id: 'optimization',
-      name: 'Optimization',
-      description: 'Converting to WebP and PNG formats',
-      status: 'pending',
-      icon: Zap
+      id: "optimization",
+      name: "Optimization",
+      description: "Converting to WebP and PNG formats",
+      status: "pending",
+      icon: Zap,
     },
     {
-      id: 'storage',
-      name: 'Storage Upload',
-      description: 'Uploading to Supabase Storage',
-      status: 'pending',
-      icon: Upload
+      id: "storage",
+      name: "Storage Upload",
+      description: "Uploading to Supabase Storage",
+      status: "pending",
+      icon: Upload,
     },
     {
-      id: 'database',
-      name: 'Database Commit',
-      description: 'Saving metadata and URLs',
-      status: 'pending',
-      icon: Database
+      id: "database",
+      name: "Database Commit",
+      description: "Saving metadata and URLs",
+      status: "pending",
+      icon: Database,
     },
     {
-      id: 'completion',
-      name: 'Completion',
-      description: 'Finalizing and cleanup',
-      status: 'pending',
-      icon: CheckCircle
-    }
+      id: "completion",
+      name: "Completion",
+      description: "Finalizing and cleanup",
+      status: "pending",
+      icon: CheckCircle,
+    },
   ];
 
   const commonTags = [
-    "funny",
-    "reactions",
-    "expressions",
-    "animals",
-    "memes",
-    "celebration",
-    "food",
-    "nature",
-    "objects",
     "emoji",
+    "random",
+    "animal",
+    "funny",
+    "meme",
     "happy",
     "sad",
     "angry",
@@ -121,36 +116,107 @@ export default function AdminUpload() {
   const generateSmartTags = (fileName: string): string[] => {
     const tags: string[] = [];
     const lowerFileName = fileName.toLowerCase();
-    
+
     // Emotion-based tags
-    if (lowerFileName.includes('happy') || lowerFileName.includes('smile') || lowerFileName.includes('joy')) tags.push('happy');
-    if (lowerFileName.includes('sad') || lowerFileName.includes('cry') || lowerFileName.includes('tear')) tags.push('sad');
-    if (lowerFileName.includes('angry') || lowerFileName.includes('mad') || lowerFileName.includes('rage')) tags.push('angry');
-    if (lowerFileName.includes('love') || lowerFileName.includes('heart') || lowerFileName.includes('kiss')) tags.push('love');
-    if (lowerFileName.includes('funny') || lowerFileName.includes('laugh') || lowerFileName.includes('lol')) tags.push('funny');
-    
+    if (
+      lowerFileName.includes("happy") ||
+      lowerFileName.includes("smile") ||
+      lowerFileName.includes("joy")
+    )
+      tags.push("happy");
+    if (
+      lowerFileName.includes("sad") ||
+      lowerFileName.includes("cry") ||
+      lowerFileName.includes("tear")
+    )
+      tags.push("sad");
+    if (
+      lowerFileName.includes("angry") ||
+      lowerFileName.includes("mad") ||
+      lowerFileName.includes("rage")
+    )
+      tags.push("angry");
+    if (
+      lowerFileName.includes("love") ||
+      lowerFileName.includes("heart") ||
+      lowerFileName.includes("kiss")
+    )
+      tags.push("love");
+    if (
+      lowerFileName.includes("funny") ||
+      lowerFileName.includes("laugh") ||
+      lowerFileName.includes("lol")
+    )
+      tags.push("funny");
+
     // Category-based tags
-    if (lowerFileName.includes('animal') || lowerFileName.includes('cat') || lowerFileName.includes('dog') || 
-        lowerFileName.includes('bird') || lowerFileName.includes('fish') || lowerFileName.includes('pet')) tags.push('animals');
-    if (lowerFileName.includes('food') || lowerFileName.includes('eat') || lowerFileName.includes('drink') || 
-        lowerFileName.includes('cake') || lowerFileName.includes('pizza')) tags.push('food');
-    if (lowerFileName.includes('party') || lowerFileName.includes('celebrate') || lowerFileName.includes('birthday')) tags.push('celebration');
-    if (lowerFileName.includes('cool') || lowerFileName.includes('awesome') || lowerFileName.includes('nice')) tags.push('cool');
-    if (lowerFileName.includes('nature') || lowerFileName.includes('flower') || lowerFileName.includes('tree')) tags.push('nature');
-    if (lowerFileName.includes('meme') || lowerFileName.includes('viral')) tags.push('memes');
-    
+    if (
+      lowerFileName.includes("animal") ||
+      lowerFileName.includes("cat") ||
+      lowerFileName.includes("dog") ||
+      lowerFileName.includes("bird") ||
+      lowerFileName.includes("fish") ||
+      lowerFileName.includes("pet")
+    )
+      tags.push("animals");
+    if (
+      lowerFileName.includes("food") ||
+      lowerFileName.includes("eat") ||
+      lowerFileName.includes("drink") ||
+      lowerFileName.includes("cake") ||
+      lowerFileName.includes("pizza")
+    )
+      tags.push("food");
+    if (
+      lowerFileName.includes("party") ||
+      lowerFileName.includes("celebrate") ||
+      lowerFileName.includes("birthday")
+    )
+      tags.push("celebration");
+    if (
+      lowerFileName.includes("cool") ||
+      lowerFileName.includes("awesome") ||
+      lowerFileName.includes("nice")
+    )
+      tags.push("cool");
+    if (
+      lowerFileName.includes("nature") ||
+      lowerFileName.includes("flower") ||
+      lowerFileName.includes("tree")
+    )
+      tags.push("nature");
+    if (lowerFileName.includes("meme") || lowerFileName.includes("viral"))
+      tags.push("memes");
+
     // Object-based tags
-    if (lowerFileName.includes('car') || lowerFileName.includes('phone') || lowerFileName.includes('computer') || 
-        lowerFileName.includes('book') || lowerFileName.includes('ball')) tags.push('objects');
-    
+    if (
+      lowerFileName.includes("car") ||
+      lowerFileName.includes("phone") ||
+      lowerFileName.includes("computer") ||
+      lowerFileName.includes("book") ||
+      lowerFileName.includes("ball")
+    )
+      tags.push("objects");
+
     // Expression-based tags
-    if (lowerFileName.includes('shock') || lowerFileName.includes('surprise') || lowerFileName.includes('wow') ||
-        lowerFileName.includes('expression') || lowerFileName.includes('face')) tags.push('expressions');
-    
+    if (
+      lowerFileName.includes("shock") ||
+      lowerFileName.includes("surprise") ||
+      lowerFileName.includes("wow") ||
+      lowerFileName.includes("expression") ||
+      lowerFileName.includes("face")
+    )
+      tags.push("expressions");
+
     // Reaction-based tags
-    if (lowerFileName.includes('reaction') || lowerFileName.includes('react') || 
-        lowerFileName.includes('response') || lowerFileName.includes('reply')) tags.push('reactions');
-    
+    if (
+      lowerFileName.includes("reaction") ||
+      lowerFileName.includes("react") ||
+      lowerFileName.includes("response") ||
+      lowerFileName.includes("reply")
+    )
+      tags.push("reactions");
+
     return [...new Set(tags)]; // Remove duplicates
   };
 
@@ -198,7 +264,7 @@ export default function AdminUpload() {
   const handleBatchProcess = async () => {
     if (selectedFiles.length === 0) {
       toast.warning("Dosya seçin", {
-        description: "Lütfen en az bir dosya seçin"
+        description: "Lütfen en az bir dosya seçin",
       });
       return;
     }
@@ -212,50 +278,50 @@ export default function AdminUpload() {
     try {
       // Prepare FormData for batch processing
       const formData = new FormData();
-      
+
       // Add files
       selectedFiles.forEach((stickerFile) => {
-        formData.append('files', stickerFile.file);
+        formData.append("files", stickerFile.file);
       });
-      
+
       // Prepare metadata
       const metadata: Record<string, { name: string; tags: string[] }> = {};
       selectedFiles.forEach((stickerFile) => {
         metadata[stickerFile.file.name] = {
           name: stickerFile.name,
-          tags: stickerFile.tags
+          tags: stickerFile.tags,
         };
       });
-      formData.append('metadata', JSON.stringify(metadata));
+      formData.append("metadata", JSON.stringify(metadata));
 
       // Start visual progress simulation
       const progressInterval = setInterval(() => {
-        setProcessingProgress(prev => {
+        setProcessingProgress((prev) => {
           if (prev >= 95) return prev;
           return prev + Math.random() * 10;
         });
       }, 500);
 
       const stepInterval = setInterval(() => {
-        setProcessingStep(prev => {
+        setProcessingStep((prev) => {
           if (prev >= processingSteps.length - 1) return prev;
           return prev + 1;
         });
       }, 1200);
 
       // Call the atomic batch processing API
-      const response = await fetch('/api/admin/process-sticker-batch', {
-        method: 'POST',
-        body: formData
+      const response = await fetch("/api/admin/process-sticker-batch", {
+        method: "POST",
+        body: formData,
       });
 
       clearInterval(progressInterval);
       clearInterval(stepInterval);
 
       const result = await response.json();
-      
+
       if (!response.ok) {
-        throw new Error(result.error || 'Batch processing failed');
+        throw new Error(result.error || "Batch processing failed");
       }
 
       // Complete the progress
@@ -267,49 +333,49 @@ export default function AdminUpload() {
       // Show success message
       const { summary } = result;
       toast.success("Batch işlemi tamamlandı!", {
-        description: `Başarılı: ${summary.successful}, Başarısız: ${summary.failed}, Toplam: ${summary.total}`
+        description: `Başarılı: ${summary.successful}, Başarısız: ${summary.failed}, Toplam: ${summary.total}`,
       });
-      
+
       // Clear form on success
       if (summary.successful > 0) {
         setSelectedFiles([]);
       }
-      
     } catch (error) {
-      console.error('Batch processing error:', error);
+      console.error("Batch processing error:", error);
       toast.error("Batch işlemi başarısız", {
-        description: error instanceof Error ? error.message : 'Bilinmeyen hata'
+        description: error instanceof Error ? error.message : "Bilinmeyen hata",
       });
-      
+
       // Reset progress on error
       setProcessingProgress(0);
       setProcessingStep(0);
-      
     } finally {
       setIsProcessing(false);
     }
   };
 
   const getStepStatus = (stepIndex: number) => {
-    if (stepIndex < processingStep) return 'completed';
-    if (stepIndex === processingStep && isProcessing) return 'processing';
-    return 'pending';
+    if (stepIndex < processingStep) return "completed";
+    if (stepIndex === processingStep && isProcessing) return "processing";
+    return "pending";
   };
 
   const getStepIcon = (step: ProcessingStep, stepIndex: number) => {
     const status = getStepStatus(stepIndex);
     const IconComponent = step.icon;
-    
-    if (status === 'completed') return <CheckCircle className="h-5 w-5 text-green-600" />;
-    if (status === 'processing') return <IconComponent className="h-5 w-5 text-blue-600 animate-pulse" />;
+
+    if (status === "completed")
+      return <CheckCircle className="h-5 w-5 text-green-600" />;
+    if (status === "processing")
+      return <IconComponent className="h-5 w-5 text-blue-600 animate-pulse" />;
     return <IconComponent className="h-5 w-5 text-gray-400" />;
   };
 
   const getStepBadgeColor = (stepIndex: number) => {
     const status = getStepStatus(stepIndex);
-    if (status === 'completed') return 'bg-green-100 text-green-800';
-    if (status === 'processing') return 'bg-blue-100 text-blue-800';
-    return 'bg-gray-100 text-gray-600';
+    if (status === "completed") return "bg-green-100 text-green-800";
+    if (status === "processing") return "bg-blue-100 text-blue-800";
+    return "bg-gray-100 text-gray-600";
   };
 
   return (
@@ -327,14 +393,11 @@ export default function AdminUpload() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Sticker Upload
           </h1>
-          <p className="text-gray-600">
-            Upload new stickers and add metadata
-          </p>
+          <p className="text-gray-600">Upload new stickers and add metadata</p>
         </div>
 
         {/* Single Column Layout for Better Focus */}
         <div className="space-y-6">
-          
           {/* File Selection & Metadata */}
           <Card>
             <CardHeader>
@@ -343,7 +406,8 @@ export default function AdminUpload() {
                 Batch Sticker Upload
               </CardTitle>
               <CardDescription>
-                Secure atomic processing - upload, optimize, and save in one operation
+                Secure atomic processing - upload, optimize, and save in one
+                operation
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -397,7 +461,7 @@ export default function AdminUpload() {
                   Processing Pipeline
                 </CardTitle>
                 <CardDescription>
-                  Batch ID: {currentBatch || 'Generating...'}
+                  Batch ID: {currentBatch || "Generating..."}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -414,14 +478,14 @@ export default function AdminUpload() {
                   {/* Step-by-Step Progress */}
                   <div className="space-y-3">
                     {processingSteps.map((step, index) => (
-                      <div 
+                      <div
                         key={step.id}
                         className={`flex items-center gap-3 p-3 rounded-lg border ${
-                          getStepStatus(index) === 'completed' 
-                            ? 'bg-green-50 border-green-200' 
-                            : getStepStatus(index) === 'processing'
-                            ? 'bg-blue-50 border-blue-200'
-                            : 'bg-gray-50 border-gray-200'
+                          getStepStatus(index) === "completed"
+                            ? "bg-green-50 border-green-200"
+                            : getStepStatus(index) === "processing"
+                            ? "bg-blue-50 border-blue-200"
+                            : "bg-gray-50 border-gray-200"
                         }`}
                       >
                         <div className="flex-shrink-0">
@@ -430,14 +494,16 @@ export default function AdminUpload() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <p className="font-medium text-sm">{step.name}</p>
-                            <Badge 
-                              variant="secondary" 
+                            <Badge
+                              variant="secondary"
                               className={`text-xs ${getStepBadgeColor(index)}`}
                             >
                               {getStepStatus(index)}
                             </Badge>
                           </div>
-                          <p className="text-xs text-gray-600 mt-1">{step.description}</p>
+                          <p className="text-xs text-gray-600 mt-1">
+                            {step.description}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -462,33 +528,43 @@ export default function AdminUpload() {
               <CardContent>
                 <div className="space-y-3">
                   {processResults.map((result, index) => (
-                    <div 
+                    <div
                       key={index}
                       className={`flex items-center justify-between p-3 rounded-lg border ${
-                        result.status === 'success' 
-                          ? 'bg-green-50 border-green-200' 
-                          : 'bg-red-50 border-red-200'
+                        result.status === "success"
+                          ? "bg-green-50 border-green-200"
+                          : "bg-red-50 border-red-200"
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        {result.status === 'success' ? (
+                        {result.status === "success" ? (
                           <CheckCircle className="h-4 w-4 text-green-600" />
                         ) : (
                           <AlertCircle className="h-4 w-4 text-red-600" />
                         )}
                         <div>
-                          <p className="font-medium text-sm">{result.originalName}</p>
+                          <p className="font-medium text-sm">
+                            {result.originalName}
+                          </p>
                           {result.error && (
-                            <p className="text-xs text-red-600 mt-1">{result.error}</p>
+                            <p className="text-xs text-red-600 mt-1">
+                              {result.error}
+                            </p>
                           )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {result.status === 'success' && (
+                        {result.status === "success" && (
                           <>
-                            <Badge variant="outline" className="text-xs">WebP</Badge>
-                            <Badge variant="outline" className="text-xs">PNG</Badge>
-                            <Badge variant="secondary" className="text-xs">ID: {result.stickerId?.slice(0, 8)}</Badge>
+                            <Badge variant="outline" className="text-xs">
+                              WebP
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              PNG
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              ID: {result.stickerId?.slice(0, 8)}
+                            </Badge>
                           </>
                         )}
                       </div>
@@ -517,9 +593,12 @@ export default function AdminUpload() {
                     <div key={index} className="border rounded-lg p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex-1">
-                          <p className="font-medium text-sm">{sticker.file.name}</p>
+                          <p className="font-medium text-sm">
+                            {sticker.file.name}
+                          </p>
                           <p className="text-xs text-gray-500">
-                            {(sticker.file.size / 1024).toFixed(1)} KB • {sticker.file.type}
+                            {(sticker.file.size / 1024).toFixed(1)} KB •{" "}
+                            {sticker.file.type}
                           </p>
                         </div>
                         <Button
@@ -530,10 +609,12 @@ export default function AdminUpload() {
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor={`name-${index}`} className="text-xs">Display Name</Label>
+                          <Label htmlFor={`name-${index}`} className="text-xs">
+                            Display Name
+                          </Label>
                           <Input
                             id={`name-${index}`}
                             value={sticker.name}
@@ -544,14 +625,14 @@ export default function AdminUpload() {
                             className="mt-1"
                           />
                         </div>
-                        
+
                         <div>
                           <Label className="text-xs">Tags</Label>
                           <div className="flex flex-wrap gap-1 mt-1 mb-2">
                             {sticker.tags.map((tag, tagIndex) => (
-                              <Badge 
+                              <Badge
                                 key={tagIndex}
-                                variant="secondary" 
+                                variant="secondary"
                                 className="text-xs px-2 py-1 flex items-center gap-1"
                               >
                                 {tag}
@@ -564,25 +645,25 @@ export default function AdminUpload() {
                               </Badge>
                             ))}
                           </div>
-                          
+
                           {/* Manual Tag Input */}
                           <div className="flex gap-2 mb-2">
                             <Input
                               placeholder="Add custom tag..."
                               className="text-xs"
                               onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
+                                if (e.key === "Enter") {
                                   const input = e.target as HTMLInputElement;
                                   const tag = input.value.trim();
                                   if (tag && !sticker.tags.includes(tag)) {
                                     addTag(index, tag);
-                                    input.value = '';
+                                    input.value = "";
                                   }
                                 }
                               }}
                             />
                           </div>
-                          
+
                           {/* Common Tags */}
                           <div className="flex flex-wrap gap-1">
                             {commonTags.slice(0, 6).map((tag) => (

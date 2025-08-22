@@ -16,154 +16,6 @@ type StickerData = Database["public"]["Tables"]["stickers"]["Row"];
 
 type StickerSize = "small" | "medium" | "large";
 
-// Fallback data generation functions for when database is not available
-async function generateFallbackStickerData(): Promise<StickerData[]> {
-  // List of known sticker files (this would ideally be generated automatically)
-  const stickerFiles = [
-    "10",
-    "11",
-    "12",
-    "13",
-    "14",
-    "15",
-    "16",
-    "17",
-    "18",
-    "19",
-    "20",
-    "21",
-    "22",
-    "23",
-    "24",
-    "25",
-    "27",
-    "3",
-    "4",
-    "5",
-    "6",
-    "8",
-    "agent-sticker",
-    "angry-walking-sticker",
-    "binoculars-sticker",
-    "bowing-down-sticker",
-    "coban-sticker",
-    "covering-ear-sticker",
-    "crazy-sticker",
-    "cute-manga-sticker",
-    "denying-sticker",
-    "depressed-sticker",
-    "despair-sticker",
-    "eyelid-pulling-sticker",
-    "face-palm-sticker",
-    "feet-up-sticker",
-    "flower-sticker",
-    "giving-hand-sticker",
-    "hand-on-cheek-sticker",
-    "hiding-smile-sticker",
-    "hope-sticker",
-    "image-Photoroom",
-    "kermit-middle-finger",
-    "kermit-sad",
-    "kermit-sitting",
-    "middle-finger-sticker",
-    "monkey-side-eye",
-    "nervous-sticker",
-    "plants-and-zombies-aesthetic -sunflower",
-    "pocoyo-angry-sticker",
-    "pocoyo-sitting-crying-sticker",
-    "pocoyo-sitting-happy-sticker",
-    "pocoyo-sleeping-sticker",
-    "pocoyo-standing-sticker",
-    "pointing-eyes-sticker",
-    "ponder-sticker",
-    "poor-sticker",
-    "refuse-sticker",
-    "rose-sticker",
-    "rubbing-belly-sticker",
-    "shinny-smile-sticker",
-    "shrek-funny",
-    "shrek-rizz",
-    "side-eye-sticker",
-    "sly-sticker",
-    "small-size-sticker",
-    "smoking-cat-sticker",
-    "spy-sticker",
-    "suspicious-sticker",
-    "thumos-down-sticker",
-    "thump-up-winking-witcker",
-    "thumps-up-sticker",
-    "touching-nose-sticker",
-    "villain-sticker",
-    "wink-fingers-sticker",
-    "wonder-female-sticker",
-    "yuck-face-sticker",
-  ];
-
-  return stickerFiles.map((filename, index) => {
-    const id = `fallback-${index}`;
-    const name =
-      filename.charAt(0).toUpperCase() + filename.slice(1).replace(/-/g, " ");
-    const slug = filename.toLowerCase();
-
-    // Simple tag generation based on filename
-    const tags = generateTagsFromFilename(filename);
-
-    return {
-      id,
-      name,
-      slug,
-      tags,
-      file_url: `/stickers/source/${filename}.png`,
-      thumbnail_url: `/stickers/source/${filename}.png`,
-      file_size: 0,
-      file_format: "png",
-      width: 512,
-      height: 512,
-      download_count: 0, // Fallback mode - no real download tracking
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-  });
-}
-
-function generateTagsFromFilename(filename: string): string[] {
-  const baseTags = ["emoji", "reaction"];
-
-  // Add specific tags based on filename patterns
-  if (filename.includes("kermit")) baseTags.push("kermit", "meme");
-  if (
-    filename.includes("sad") ||
-    filename.includes("depressed") ||
-    filename.includes("despair")
-  )
-    baseTags.push("sad");
-  if (filename.includes("happy") || filename.includes("smile"))
-    baseTags.push("happy");
-  if (filename.includes("angry")) baseTags.push("angry");
-  if (filename.includes("funny")) baseTags.push("funny");
-  if (filename.includes("cute")) baseTags.push("cute");
-  if (filename.includes("finger")) baseTags.push("rude");
-  if (filename.includes("monkey")) baseTags.push("monkey", "meme");
-  if (filename.includes("shrek")) baseTags.push("shrek", "meme");
-  if (filename.includes("pocoyo")) baseTags.push("pocoyo", "cartoon");
-  if (filename.includes("flower") || filename.includes("rose"))
-    baseTags.push("flower");
-
-  return baseTags;
-}
-
-function generateFallbackTags() {
-  return [
-    { tag: "emoji", count: 50 },
-    { tag: "reaction", count: 50 },
-    { tag: "meme", count: 15 },
-    { tag: "happy", count: 10 },
-    { tag: "sad", count: 8 },
-    { tag: "funny", count: 12 },
-    { tag: "kermit", count: 3 },
-    { tag: "cute", count: 5 },
-  ];
-}
 
 export function StickerGallery() {
   const [selectedTag, setSelectedTag] = useState("all");
@@ -173,7 +25,7 @@ export function StickerGallery() {
     { tag: string; count: number }[]
   >([]);
   const [loading, setLoading] = useState(true);
-  const [usingFallbackData, setUsingFallbackData] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Infinite scroll pagination state
   const [displayedStickers, setDisplayedStickers] = useState<StickerData[]>([]);
@@ -194,6 +46,7 @@ export function StickerGallery() {
     const loadData = async () => {
       try {
         setLoading(true);
+        setError(null);
 
         // Add a small delay to ensure database consistency
         await new Promise((resolve) => setTimeout(resolve, 50));
@@ -237,18 +90,11 @@ export function StickerGallery() {
         }
         setStickers(stickersData);
         setPopularTags(tagsData);
-        setUsingFallbackData(false);
       } catch (error) {
-        // If database fails, use fallback local data
         console.error("❌ Database connection failed:", error);
-        console.log("🔄 Using local fallback data");
-
-        // Generate fallback sticker data from local files
-        const fallbackStickers = await generateFallbackStickerData();
-
-        setStickers(fallbackStickers);
-        setPopularTags(generateFallbackTags());
-        setUsingFallbackData(true);
+        setError("Unable to load stickers from database. Please try refreshing the page.");
+        setStickers([]);
+        setPopularTags([]);
       } finally {
         setLoading(false);
       }
@@ -330,35 +176,25 @@ export function StickerGallery() {
   }, [loadMoreStickers, hasMore]);
 
   const handleDownload = async (stickerId: string) => {
-    console.log(
-      "🔽 Download started for sticker:",
-      stickerId,
-      "Database mode:",
-      !usingFallbackData
-    );
+    console.log("🔽 Download started for sticker:", stickerId);
 
-    // Only track download in database - no localStorage needed
-    if (!usingFallbackData) {
-      try {
-        console.log("📊 Tracking individual download in database...");
+    try {
+      console.log("📊 Tracking individual download in database...");
 
-        // Track download in database first
-        await DatabaseService.trackDownload(
-          stickerId,
-          "0.0.0.0",
-          navigator.userAgent
-        );
+      // Track download in database first
+      await DatabaseService.trackDownload(
+        stickerId,
+        "0.0.0.0",
+        navigator.userAgent
+      );
 
-        console.log("✅ Individual download tracked successfully in database");
+      console.log("✅ Individual download tracked successfully in database");
 
-        // Refresh the specific sticker's data from database
-        await refreshStickerData(stickerId);
-      } catch (error) {
-        console.error("❌ Database tracking failed:", error);
-        // Don't update UI if database fails
-      }
-    } else {
-      console.log("⚠️ Fallback mode - download not tracked");
+      // Refresh the specific sticker's data from database
+      await refreshStickerData(stickerId);
+    } catch (error) {
+      console.error("❌ Database tracking failed:", error);
+      // Don't update UI if database fails
     }
   };
 
@@ -383,11 +219,6 @@ export function StickerGallery() {
 
   // Handle bulk download completion
   const handleBulkDownloadComplete = async (stickerIds: string[]) => {
-    if (usingFallbackData) {
-      console.log("⚠️ Fallback mode - bulk download UI update skipped");
-      return;
-    }
-
     console.log(
       `🔄 Refreshing UI for ${stickerIds.length} stickers after bulk download`
     );
@@ -530,12 +361,10 @@ export function StickerGallery() {
     <section className="py-8">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Database error indicator */}
-        {usingFallbackData && (
+        {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
             <p className="text-sm">
-              <strong>Connection Error:</strong> Unable to load stickers from
-              database. Please check your connection and try refreshing the
-              page.
+              <strong>Connection Error:</strong> {error}
             </p>
           </div>
         )}

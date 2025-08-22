@@ -4,6 +4,8 @@
 
 - sticker CRUD (DONE)
 - infinite scroll (DONE)
+- Toplu sticker silme
+- toplu sticker yükleme
 
 ---
 

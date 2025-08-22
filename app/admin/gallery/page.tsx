@@ -1,6 +1,6 @@
 "use client";
 
-export const runtime = 'edge';
+export const runtime = "edge";
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,17 +51,20 @@ export default function AdminGallery() {
 
   const allTags = [
     "all",
-    "funny",
-    "reactions",
-    "expressions",
-    "animals",
-    "memes",
-    "celebration",
-    "food",
-    "nature",
-    "objects",
     "emoji",
+    "pocoyo",
+    "shrek",
+    "kermit",
+    "cat",
+    "random",
+    "animal",
+    "funny",
+    "meme",
     "happy",
+    "sad",
+    "angry",
+    "love",
+    "party",
     "cool",
   ];
 
@@ -82,7 +85,7 @@ export default function AdminGallery() {
       } catch (error) {
         console.error("Error loading stickers:", error);
         toast.error("Sticker'lar yüklenirken hata oluştu", {
-          description: "Lütfen sayfayı yenileyin"
+          description: "Lütfen sayfayı yenileyin",
         });
         setStickers([]);
         setFilteredStickers([]);
@@ -134,12 +137,13 @@ export default function AdminGallery() {
       // Remove from local state
       setStickers((prev) => prev.filter((s) => s.id !== id));
       toast.success("Sticker başarıyla silindi", {
-        description: "Sticker sisteminizden kaldırıldı"
+        description: "Sticker sisteminizden kaldırıldı",
       });
     } catch (error) {
       console.error("Delete error:", error);
       toast.error("Sticker silinemedi", {
-        description: error instanceof Error ? error.message : "Bilinmeyen hata oluştu"
+        description:
+          error instanceof Error ? error.message : "Bilinmeyen hata oluştu",
       });
     }
   };

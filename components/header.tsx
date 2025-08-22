@@ -50,18 +50,18 @@ export function Header() {
             <Button
               variant="ghost"
               size="sm"
-              className="hidden sm:flex items-center space-x-2 text-muted-foreground hover:text-foreground"
+              className="flex items-center space-x-2 text-muted-foreground hover:text-foreground"
               onClick={handleAdminClick}
             >
               <Settings className="h-4 w-4" />
-              <span>Admin</span>
+              <span className="hidden sm:inline">Admin</span>
             </Button>
 
             {isAuthenticated && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="hidden sm:flex items-center space-x-2 text-muted-foreground hover:text-foreground"
+                className="flex items-center space-x-2 text-muted-foreground hover:text-foreground"
                 onClick={logout}
                 title="Admin çıkışı"
               >
@@ -87,10 +87,10 @@ export function Header() {
             <Button
               variant="outline"
               size="sm"
-              className="flex items-center space-x-2 bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300"
+              className="hidden sm:flex items-center space-x-2 bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300"
             >
               <Heart className="h-4 w-4" />
-              <span className="hidden sm:inline">Support</span>
+              <span>Support</span>
             </Button>
           </div>
         </div>

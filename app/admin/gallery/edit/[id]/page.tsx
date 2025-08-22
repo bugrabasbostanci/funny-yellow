@@ -1,6 +1,6 @@
 "use client";
 
-export const runtime = 'edge';
+export const runtime = "edge";
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Save, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { toast } from "sonner";
 
 interface Sticker {
   id: string;
@@ -42,12 +43,16 @@ export default function EditSticker() {
       try {
         const response = await fetch(`/api/admin/stickers?limit=1000`);
         if (!response.ok) throw new Error("Failed to load stickers");
-        
+
         const data = await response.json();
-        const targetSticker = data.stickers.find((s: Sticker) => s.id === stickerId);
-        
+        const targetSticker = data.stickers.find(
+          (s: Sticker) => s.id === stickerId
+        );
+
         if (!targetSticker) {
-          alert("Sticker not found");
+          toast.error("Sticker not found", {
+            description: "This sticker does not exist",
+          });
           router.push("/admin/gallery");
           return;
         }
@@ -58,7 +63,9 @@ export default function EditSticker() {
         setSlug(targetSticker.slug || "");
       } catch (error) {
         console.error("Error loading sticker:", error);
-        alert("Error loading sticker");
+        toast.error("Error loading sticker", {
+          description: "Could not retrieve sticker information",
+        });
         router.push("/admin/gallery");
       } finally {
         setLoading(false);
@@ -78,7 +85,7 @@ export default function EditSticker() {
   };
 
   const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
+    setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
   const handleSave = async () => {
@@ -104,15 +111,15 @@ export default function EditSticker() {
         throw new Error(error.error || "Update failed");
       }
 
-      alert("✅ Sticker updated successfully");
+      toast.success("Sticker updated", {
+        description: "All changes have been saved",
+      });
       router.push("/admin/gallery");
     } catch (error) {
       console.error("Save error:", error);
-      alert(
-        `❌ Save error: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      );
+      toast.error("Failed to update sticker", {
+        description: error instanceof Error ? error.message : "Unknown error",
+      });
     } finally {
       setSaving(false);
     }
@@ -136,7 +143,10 @@ export default function EditSticker() {
         <div className="max-w-2xl mx-auto">
           <div className="text-center py-12">
             <p className="text-gray-500">Sticker not found</p>
-            <Link href="/admin/gallery" className="text-blue-600 hover:underline">
+            <Link
+              href="/admin/gallery"
+              className="text-blue-600 hover:underline"
+            >
               Back to Gallery
             </Link>
           </div>
@@ -189,7 +199,9 @@ export default function EditSticker() {
               </div>
               <div className="mt-4 text-sm text-gray-600">
                 <p>Downloads: {sticker.download_count || 0}</p>
-                <p>Created: {new Date(sticker.created_at).toLocaleDateString()}</p>
+                <p>
+                  Created: {new Date(sticker.created_at).toLocaleDateString()}
+                </p>
                 {sticker.file_size && (
                   <p>Size: {(sticker.file_size / 1024).toFixed(1)} KB</p>
                 )}

@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Image as ImageIcon, BarChart3, Clock, TrendingUp, Download } from "lucide-react";
+import { Upload, Image as ImageIcon, BarChart3, Clock, TrendingUp, Download, Package } from "lucide-react";
 import Link from "next/link";
 
 interface Stats {
@@ -80,7 +80,7 @@ export default function AdminDashboard() {
           <p className="text-gray-600">Sticker management and upload operations</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -112,6 +112,25 @@ export default function AdminDashboard() {
               <Link href="/admin/gallery">
                 <Button variant="outline" className="w-full">
                   Manage Stickers
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Pack Management
+              </CardTitle>
+              <CardDescription>
+                Organize stickers into themed packs
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/admin/packs">
+                <Button variant="outline" className="w-full">
+                  Manage Packs
                 </Button>
               </Link>
             </CardContent>

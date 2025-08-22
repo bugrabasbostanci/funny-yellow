@@ -17,6 +17,7 @@ import {
   Loader2,
 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 interface ScriptStatus {
   name: string;
@@ -216,7 +217,9 @@ export default function AdminScripts() {
       }
     } catch (error) {
       console.error('Pipeline error:', error);
-      alert(`Pipeline hata aldı: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`);
+      toast.error("Pipeline hata aldı", {
+        description: error instanceof Error ? error.message : 'Bilinmeyen hata'
+      });
     }
   };
 

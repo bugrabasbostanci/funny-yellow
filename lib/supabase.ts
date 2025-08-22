@@ -87,6 +87,64 @@ export type Database = {
           downloaded_at?: string;
         };
       };
+      sticker_packs: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          character: string | null;
+          thumbnail_url: string | null;
+          display_order: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string | null;
+          character?: string | null;
+          thumbnail_url?: string | null;
+          display_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          character?: string | null;
+          thumbnail_url?: string | null;
+          display_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      sticker_pack_items: {
+        Row: {
+          id: string;
+          pack_id: string;
+          sticker_id: string;
+          display_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          pack_id: string;
+          sticker_id: string;
+          display_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          pack_id?: string;
+          sticker_id?: string;
+          display_order?: number;
+          created_at?: string;
+        };
+      };
     };
   };
 };

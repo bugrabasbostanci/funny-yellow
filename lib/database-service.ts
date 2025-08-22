@@ -1,10 +1,16 @@
 import { supabase, type Database } from "./supabase";
 import crypto from "crypto";
+import { getStickersByPack, type StickerPack } from "./pack-definitions";
 
 // Note: We're using the regular supabase client (anon key) from frontend
 // If RLS policies prevent reading downloads, we'll use a different approach
 
 type StickerInsert = Database["public"]["Tables"]["stickers"]["Insert"];
+type StickerData = Database["public"]["Tables"]["stickers"]["Row"];
+type PackData = Database["public"]["Tables"]["sticker_packs"]["Row"];
+type PackInsert = Database["public"]["Tables"]["sticker_packs"]["Insert"];
+type PackItemData = Database["public"]["Tables"]["sticker_pack_items"]["Row"];
+// type PackItemInsert = Database["public"]["Tables"]["sticker_pack_items"]["Insert"];
 
 // Track ongoing download operations to prevent race conditions
 const pendingDownloads = new Set<string>();
@@ -427,5 +433,257 @@ export class DatabaseService {
       // Clean up all pending states
       availableStickers.forEach(id => pendingDownloads.delete(id));
     }
+  }
+
+  // Get all available sticker packs (now uses database)
+  static async getPacks(): Promise<StickerPack[]> {
+    const { loadPacksFromDatabase } = await import("./pack-definitions");
+    return loadPacksFromDatabase();
+  }
+
+  // Get stickers for a specific pack
+  static async getPackStickers(packId: string): Promise<StickerData[]> {
+    const allStickers = await this.getStickers();
+    return getStickersByPack(packId, allStickers);
+  }
+
+  // Track pack download (downloads all stickers in a pack)
+  static async trackPackDownload(
+    packId: string,
+    ipAddress: string,
+    userAgent?: string
+  ) {
+    const packData = await this.getPackById(packId);
+    if (!packData) {
+      throw new Error("Pack not found");
+    }
+
+    console.log(`📦 Tracking pack download for ${packData.name} (${packData.stickers.length} stickers)`);
+    
+    const stickerIds = packData.stickers.map(sticker => sticker.id);
+
+    if (stickerIds.length === 0) {
+      console.log("⚠️ No stickers found for pack in database");
+      return [];
+    }
+
+    return this.trackBulkDownload(stickerIds, ipAddress, userAgent);
+  }
+
+  // ===== PACK MANAGEMENT METHODS =====
+
+  // Get all packs from database
+  static async getAllPacks(): Promise<PackData[]> {
+    const { data, error } = await supabase
+      .from("sticker_packs")
+      .select("*")
+      .eq("is_active", true)
+      .order("display_order", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching packs:", error);
+      throw new Error("Failed to fetch packs");
+    }
+
+    return data || [];
+  }
+
+  // Get pack by ID with stickers
+  static async getPackById(packId: string): Promise<PackData & { stickers: StickerData[] }> {
+    const [packResponse, itemsResponse] = await Promise.all([
+      supabase
+        .from("sticker_packs")
+        .select("*")
+        .eq("id", packId)
+        .eq("is_active", true)
+        .single(),
+      supabase
+        .from("sticker_pack_items")
+        .select(`
+          display_order,
+          stickers (*)
+        `)
+        .eq("pack_id", packId)
+        .order("display_order", { ascending: true })
+    ]);
+
+    if (packResponse.error) {
+      throw new Error("Pack not found");
+    }
+
+    if (itemsResponse.error) {
+      console.error("Error fetching pack items:", itemsResponse.error);
+      return { ...packResponse.data, stickers: [] };
+    }
+
+    const stickers = itemsResponse.data
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ?.map((item: any) => item.stickers)
+      .filter(Boolean) || [];
+
+    return { ...packResponse.data, stickers };
+  }
+
+  // Create new pack
+  static async createPack(packData: PackInsert): Promise<PackData> {
+    const { data, error } = await supabase
+      .from("sticker_packs")
+      .insert(packData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error creating pack:", error);
+      throw new Error("Failed to create pack");
+    }
+
+    return data;
+  }
+
+  // Update pack
+  static async updatePack(packId: string, updates: Partial<PackInsert>): Promise<PackData> {
+    const { data, error } = await supabase
+      .from("sticker_packs")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", packId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error updating pack:", error);
+      throw new Error("Failed to update pack");
+    }
+
+    return data;
+  }
+
+  // Delete pack (soft delete by setting is_active = false)
+  static async deletePack(packId: string): Promise<void> {
+    const { error } = await supabase
+      .from("sticker_packs")
+      .update({ is_active: false })
+      .eq("id", packId);
+
+    if (error) {
+      console.error("Error deleting pack:", error);
+      throw new Error("Failed to delete pack");
+    }
+  }
+
+  // Add sticker to pack
+  static async addStickerToPack(
+    packId: string, 
+    stickerId: string, 
+    displayOrder?: number
+  ): Promise<PackItemData> {
+    // Get current max order if no order specified
+    if (displayOrder === undefined) {
+      const { data: items } = await supabase
+        .from("sticker_pack_items")
+        .select("display_order")
+        .eq("pack_id", packId)
+        .order("display_order", { ascending: false })
+        .limit(1);
+      
+      displayOrder = (items?.[0]?.display_order || 0) + 1;
+    }
+
+    const { data, error } = await supabase
+      .from("sticker_pack_items")
+      .insert({
+        pack_id: packId,
+        sticker_id: stickerId,
+        display_order: displayOrder,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error adding sticker to pack:", error);
+      // Check if it's a unique constraint violation (duplicate)
+      if (error.code === '23505' || error.message?.includes('duplicate') || error.message?.includes('already exists')) {
+        throw new Error("Bu sticker zaten pack'te mevcut");
+      }
+      throw new Error("Sticker pack'e eklenirken hata oluştu");
+    }
+
+    return data;
+  }
+
+  // Remove sticker from pack
+  static async removeStickerFromPack(packId: string, stickerId: string): Promise<void> {
+    const { error } = await supabase
+      .from("sticker_pack_items")
+      .delete()
+      .eq("pack_id", packId)
+      .eq("sticker_id", stickerId);
+
+    if (error) {
+      console.error("Error removing sticker from pack:", error);
+      throw new Error("Failed to remove sticker from pack");
+    }
+  }
+
+  // Update pack item order (for drag & drop)
+  static async updatePackItemOrder(
+    packId: string, 
+    stickerOrders: { stickerId: string; order: number }[]
+  ): Promise<void> {
+    const updatePromises = stickerOrders.map(({ stickerId, order }) =>
+      supabase
+        .from("sticker_pack_items")
+        .update({ display_order: order })
+        .eq("pack_id", packId)
+        .eq("sticker_id", stickerId)
+    );
+
+    const results = await Promise.allSettled(updatePromises);
+    const failures = results.filter(r => r.status === 'rejected');
+    
+    if (failures.length > 0) {
+      console.error("Some order updates failed:", failures);
+      throw new Error("Failed to update some sticker orders");
+    }
+  }
+
+  // Get stickers not in any pack (for adding to packs)
+  static async getUnassignedStickers(): Promise<StickerData[]> {
+    const { data, error } = await supabase
+      .from("stickers")
+      .select(`
+        *,
+        sticker_pack_items!left (pack_id)
+      `)
+      .is("sticker_pack_items.pack_id", null);
+
+    if (error) {
+      console.error("Error fetching unassigned stickers:", error);
+      throw new Error("Failed to fetch unassigned stickers");
+    }
+
+    return data || [];
+  }
+
+  // Get pack statistics
+  static async getPackStats(packId: string): Promise<{ stickerCount: number; totalDownloads: number }> {
+    const [stickerCount, totalDownloads] = await Promise.all([
+      supabase
+        .from("sticker_pack_items")
+        .select("id")
+        .eq("pack_id", packId),
+      supabase
+        .from("sticker_pack_items")
+        .select(`
+          stickers (download_count)
+        `)
+        .eq("pack_id", packId)
+    ]);
+
+    return {
+      stickerCount: stickerCount.data?.length || 0,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      totalDownloads: totalDownloads.data?.reduce((sum: number, item: any) => 
+        sum + (item.stickers?.download_count || 0), 0) || 0
+    };
   }
 }

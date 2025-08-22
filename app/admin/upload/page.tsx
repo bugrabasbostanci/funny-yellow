@@ -26,6 +26,7 @@ import {
   ImageIcon
 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 interface StickerFile {
   file: File;
@@ -194,7 +195,9 @@ export default function AdminUpload() {
 
   const handleBatchProcess = async () => {
     if (selectedFiles.length === 0) {
-      alert("Please select at least one file");
+      toast.warning("Dosya seçin", {
+        description: "Lütfen en az bir dosya seçin"
+      });
       return;
     }
 
@@ -261,7 +264,9 @@ export default function AdminUpload() {
 
       // Show success message
       const { summary } = result;
-      alert(`✅ Batch processing completed!\n\n📊 Results:\n✅ Successful: ${summary.successful}\n❌ Failed: ${summary.failed}\n📝 Total: ${summary.total}\n\nBatch ID: ${result.batchId}`);
+      toast.success("Batch işlemi tamamlandı!", {
+        description: `Başarılı: ${summary.successful}, Başarısız: ${summary.failed}, Toplam: ${summary.total}`
+      });
       
       // Clear form on success
       if (summary.successful > 0) {
@@ -270,7 +275,9 @@ export default function AdminUpload() {
       
     } catch (error) {
       console.error('Batch processing error:', error);
-      alert(`❌ Batch processing error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error("Batch işlemi başarısız", {
+        description: error instanceof Error ? error.message : 'Bilinmeyen hata'
+      });
       
       // Reset progress on error
       setProcessingProgress(0);

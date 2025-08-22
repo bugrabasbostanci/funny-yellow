@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { toast } from "sonner";
 
 interface Sticker {
   id: string;
@@ -78,7 +79,9 @@ export default function AdminGallery() {
         setFilteredStickers(data.stickers || []);
       } catch (error) {
         console.error("Error loading stickers:", error);
-        alert("Error loading stickers");
+        toast.error("Sticker'lar yüklenirken hata oluştu", {
+          description: "Lütfen sayfayı yenileyin"
+        });
         setStickers([]);
         setFilteredStickers([]);
       } finally {
@@ -128,14 +131,14 @@ export default function AdminGallery() {
 
       // Remove from local state
       setStickers((prev) => prev.filter((s) => s.id !== id));
-      alert("✅ Sticker deleted successfully");
+      toast.success("Sticker başarıyla silindi", {
+        description: "Sticker sisteminizden kaldırıldı"
+      });
     } catch (error) {
       console.error("Delete error:", error);
-      alert(
-        `❌ Delete error: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      );
+      toast.error("Sticker silinemedi", {
+        description: error instanceof Error ? error.message : "Bilinmeyen hata oluştu"
+      });
     }
   };
 

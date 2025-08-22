@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Image as ImageIcon, BarChart3, Clock, TrendingUp, Download, Package } from "lucide-react";
+import { Upload, Image as ImageIcon, BarChart3, Clock, TrendingUp, Download, Package, Home } from "lucide-react";
 import Link from "next/link";
 
 interface Stats {
@@ -78,10 +78,20 @@ export default function AdminDashboard() {
       <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-50 p-6">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Admin Dashboard
-          </h1>
-          <p className="text-gray-600">Sticker management and upload operations</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Admin Dashboard
+              </h1>
+              <p className="text-gray-600">Sticker management and upload operations</p>
+            </div>
+            <Link href="/">
+              <Button variant="outline" className="flex items-center gap-2">
+                <Home className="h-4 w-4" />
+                Ana Sayfa
+              </Button>
+            </Link>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

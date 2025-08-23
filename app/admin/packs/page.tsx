@@ -72,12 +72,12 @@ export default function AdminPacksPage() {
       await DatabaseService.deletePack(packId);
       setPacks(packs.filter(pack => pack.id !== packId));
       toast.success("Pack başarıyla silindi", {
-        description: `${packName} pack'i sisteminizden kaldırıldı`
+        description: `${packName} pack has been removed from your system`
       });
     } catch (error) {
       console.error("Error deleting pack:", error);
-      toast.error("Pack silinirken hata oluştu", {
-        description: "Lütfen tekrar deneyin veya sistem yöneticisine başvurun"
+      toast.error("Error deleting pack", {
+        description: "Please try again or contact the system administrator"
       });
     }
   };
@@ -263,7 +263,7 @@ export default function AdminPacksPage() {
             </h3>
             <p className="text-gray-600 mb-4">
               {searchQuery 
-                ? "Arama kriterlerinizi değiştirmeyi deneyin"
+                ? "Try changing your search criteria"
                 : "İlk sticker pack&apos;inizi oluşturun"
               }
             </p>

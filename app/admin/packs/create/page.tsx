@@ -55,8 +55,8 @@ export default function CreatePackPage() {
       router.push(`/admin/packs/edit/${newPack.id}`);
     } catch (error) {
       console.error("Error creating pack:", error);
-      toast.error("Pack oluşturulurken hata oluştu", {
-        description: "Lütfen tekrar deneyin"
+      toast.error("Error creating pack", {
+        description: "Please try again"
       });
     } finally {
       setSaving(false);

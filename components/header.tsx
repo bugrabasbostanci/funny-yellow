@@ -63,7 +63,7 @@ export function Header() {
                 size="sm"
                 className="flex items-center space-x-2 text-muted-foreground hover:text-foreground"
                 onClick={logout}
-                title="Admin çıkışı"
+                title="Admin logout"
               >
                 <LogOut className="h-4 w-4" />
               </Button>

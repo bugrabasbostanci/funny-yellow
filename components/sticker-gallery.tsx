@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { StickerCard } from "./sticker-card";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { StickerHeader } from "./sticker-header";
+import { StickerFilters } from "./sticker-filters";
+import { StickerControls } from "./sticker-controls";
+import { StickerGrid } from "./sticker-grid";
+import { StickerPagination } from "./sticker-pagination";
 import { DownloadOptionsModal } from "./download-options-modal";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Search, Grid3X3, Grid2X2, LayoutGrid, X } from "lucide-react";
+import { ErrorBoundary } from "./error-boundary";
 import { DatabaseService } from "@/lib/database-service";
 import { type Database } from "@/lib/supabase";
 import { type StickerForDownload } from "@/lib/bulk-download-utils";
@@ -31,7 +32,6 @@ export function StickerGallery() {
   const [displayedStickers, setDisplayedStickers] = useState<StickerData[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const itemsPerPage = 24;
-  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Bulk download state
   const [selectionMode, setSelectionMode] = useState(false);
@@ -156,24 +156,6 @@ export function StickerGallery() {
     setDisplayedStickers(initialStickers);
     setHasMore(filteredStickers.length > itemsPerPage);
   }, [filteredStickers, itemsPerPage]);
-
-  // Intersection Observer for infinite scroll
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel || !hasMore) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore) {
-          loadMoreStickers();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [loadMoreStickers, hasMore]);
 
   const handleDownload = async (stickerId: string) => {
     console.log("🔽 Download started for sticker:", stickerId);
@@ -309,24 +291,16 @@ export function StickerGallery() {
     displayedStickers.length > 0 &&
     displayedStickers.every((sticker) => selectedStickers.has(sticker.id));
 
-  const getGridClasses = () => {
-    switch (stickerSize) {
-      case "small":
-        return "grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-3";
-      case "medium":
-        return "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-4";
-      case "large":
-        return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6";
-      default:
-        return "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-4";
-    }
-  };
-
   const handleCreatePack = () => {
     if (selectedStickers.size === 0) {
       return;
     }
     setShowDownloadModal(true);
+  };
+
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setSelectedTag("all");
   };
 
   // Get selected stickers data for bulk download
@@ -340,9 +314,6 @@ export function StickerGallery() {
         imageUrl: sticker.file_url,
       }));
   }, [stickers, selectedStickers]);
-
-  // Grid layout with size controls
-  const gridClasses = getGridClasses();
 
   if (loading) {
     return (
@@ -369,239 +340,61 @@ export function StickerGallery() {
           </div>
         )}
 
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-bold font-display mb-2">
-              Sticker Gallery
-            </h2>
-            <p className="text-muted-foreground">
-              Discover {stickers.length} free stickers with {popularTags.length}
-              + popular tags
-            </p>
-          </div>
+        <StickerHeader
+          stickersCount={stickers.length}
+          popularTagsCount={popularTags.length}
+          selectionMode={selectionMode}
+          selectedStickers={selectedStickers}
+          toggleSelectionMode={toggleSelectionMode}
+          handleCreatePack={handleCreatePack}
+          selectAllStickers={selectAllStickers}
+          deselectAllStickers={deselectAllStickers}
+          isAllSelected={isAllSelected}
+        />
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2 mt-4 sm:mt-0 flex-wrap">
-            {selectedStickers.size > 0 && selectionMode && (
-              <Button
-                onClick={handleCreatePack}
-                className="bg-success text-success-foreground hover:bg-success/90"
-                size="sm"
-              >
-                Create Pack ({selectedStickers.size})
-              </Button>
-            )}
-
-            <Button
-              variant={selectionMode ? "default" : "outline"}
-              size="sm"
-              onClick={toggleSelectionMode}
-              className={`${
-                !selectionMode
-                  ? "bg-success hover:bg-success/90 text-success-foreground border-success"
-                  : ""
-              }`}
-            >
-              {selectionMode ? "Exit Select" : "Create Pack"}
-            </Button>
-
-            {/* Select All/Deselect All - only show in selection mode */}
-            {selectionMode && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={
-                  isAllSelected ? deselectAllStickers : selectAllStickers
-                }
-              >
-                <span className="hidden sm:inline">
-                  {isAllSelected ? "Deselect All" : "Select All"}
-                </span>
-                <span className="sm:hidden">
-                  {isAllSelected ? "Deselect" : "Select All"}
-                </span>
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Search Bar */}
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            type="text"
-            placeholder="Search stickers by name and tags"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 pr-10 py-3 bg-secondary border-0 focus:ring-2 focus:ring-primary"
+        <ErrorBoundary>
+          <StickerFilters
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            selectedTag={selectedTag}
+            setSelectedTag={setSelectedTag}
+            popularTags={popularTags}
           />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Clear search"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
+        </ErrorBoundary>
 
-        {/* Tag Filter Buttons */}
-        {popularTags.length > 0 && (
-          <div className="mb-6">
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={selectedTag === "all" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedTag("all")}
-                className="h-8"
-              >
-                All
-              </Button>
-              {popularTags.slice(0, 10).map(({ tag, count }) => (
-                <Button
-                  key={tag}
-                  variant={selectedTag === tag ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedTag(tag)}
-                  className="h-8"
-                >
-                  #{tag} ({count})
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
+        <ErrorBoundary>
+          <StickerControls
+            selectionMode={selectionMode}
+            selectedStickers={selectedStickers}
+            displayedStickers={displayedStickers}
+            stickerSize={stickerSize}
+            setStickerSize={setStickerSize}
+            selectedTag={selectedTag}
+          />
+        </ErrorBoundary>
 
-        {/* Results Info and Size Controls */}
-        <div className="flex items-center justify-between mb-6">
-          <p className="text-sm text-muted-foreground">
-            {selectionMode ? (
-              <span className="flex items-center gap-2 flex-wrap">
-                <Badge
-                  variant="secondary"
-                  className="bg-primary/10 text-primary"
-                >
-                  {selectedStickers.size} of {displayedStickers.length} selected
-                </Badge>
-                {selectedTag !== "all" && (
-                  <span className="text-muted-foreground">
-                    from <span className="font-medium">#{selectedTag}</span>
-                  </span>
-                )}
-                {selectedStickers.size > 0 && (
-                  <span className="text-xs text-success font-medium">
-                    Ready to download!
-                  </span>
-                )}
-              </span>
-            ) : (
-              <>
-                Showing {displayedStickers.length} of {filteredStickers.length}{" "}
-                sticker
-                {filteredStickers.length !== 1 ? "s" : ""}
-                {selectedTag !== "all" && (
-                  <span className="hidden sm:inline">
-                    {" "}
-                    tagged with{" "}
-                    <span className="font-medium">#{selectedTag}</span>
-                  </span>
-                )}
-              </>
-            )}
-          </p>
+        <ErrorBoundary>
+          <StickerGrid
+            displayedStickers={displayedStickers}
+            stickerSize={stickerSize}
+            selectionMode={selectionMode}
+            selectedStickers={selectedStickers}
+            onDownload={handleDownload}
+            onPreview={handlePreview}
+            onStickerSelection={handleStickerSelection}
+            onClearFilters={handleClearFilters}
+          />
+        </ErrorBoundary>
 
-          {/* Size Control Buttons */}
-          <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
-            <Button
-              variant={stickerSize === "small" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setStickerSize("small")}
-              className="h-8 w-8 p-0"
-              title="Small size"
-            >
-              <Grid3X3 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={stickerSize === "medium" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setStickerSize("medium")}
-              className="h-8 w-8 p-0"
-              title="Medium size"
-            >
-              <Grid2X2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={stickerSize === "large" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setStickerSize("large")}
-              className="h-8 w-8 p-0"
-              title="Large size"
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Sticker Grid */}
-        {displayedStickers.length > 0 ? (
-          <div className={`grid gap-4 ${gridClasses}`}>
-            {displayedStickers.map((sticker) => (
-              <StickerCard
-                key={sticker.id}
-                id={sticker.id}
-                name={sticker.name}
-                imageUrl={sticker.file_url}
-                downloadCount={sticker.download_count}
-                tags={sticker.tags || []}
-                onDownload={handleDownload}
-                onPreview={handlePreview}
-                selectionMode={selectionMode}
-                isSelected={selectedStickers.has(sticker.id)}
-                onSelectionChange={handleStickerSelection}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-xl font-semibold mb-2">No stickers found</h3>
-            <p className="text-muted-foreground mb-4">
-              Try adjusting your search or tag filter to find what you&apos;re
-              looking for.
-            </p>
-            <Button
-              onClick={() => {
-                setSearchQuery("");
-                setSelectedTag("all");
-              }}
-            >
-              Clear Filters
-            </Button>
-          </div>
-        )}
-
-        {/* Infinite Scroll Sentinel */}
-        {hasMore && displayedStickers.length > 0 && (
-          <div ref={sentinelRef} className="text-center mt-8 py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-            <p className="text-sm text-muted-foreground">
-              Loading more stickers...
-            </p>
-          </div>
-        )}
-
-        {/* End of results indicator */}
-        {!hasMore &&
-          displayedStickers.length > 0 &&
-          filteredStickers.length > itemsPerPage && (
-            <div className="text-center mt-8 py-4">
-              <p className="text-sm text-muted-foreground">
-                🎉 You&apos;ve seen all {filteredStickers.length} stickers!
-              </p>
-            </div>
-          )}
+        <ErrorBoundary>
+          <StickerPagination
+            hasMore={hasMore}
+            displayedStickers={displayedStickers}
+            filteredStickers={filteredStickers}
+            itemsPerPage={itemsPerPage}
+            loadMoreStickers={loadMoreStickers}
+          />
+        </ErrorBoundary>
 
         {/* Download Options Modal */}
         <DownloadOptionsModal

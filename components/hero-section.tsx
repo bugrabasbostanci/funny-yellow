@@ -58,7 +58,7 @@ export function HeroSection() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-lg mx-auto">
             <div className="text-center">
               <div className="text-2xl sm:text-3xl font-bold text-primary font-display">
-                40+
+                80+
               </div>
               <div className="text-sm text-muted-foreground">Free Stickers</div>
             </div>

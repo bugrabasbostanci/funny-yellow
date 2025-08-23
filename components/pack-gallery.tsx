@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, ArrowLeft, X } from "lucide-react";
+import { ErrorBoundary } from "./error-boundary";
 import { loadPacksFromDatabase, type StickerPack } from "@/lib/pack-definitions";
 import { DatabaseService } from "@/lib/database-service";
 import { type Database } from "@/lib/supabase";
@@ -204,44 +205,47 @@ export function PackGallery() {
 
         {/* Pack Grid */}
         {filteredPacks.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredPacks.map((pack) => {
-              // For database packs, find stickers by pack.stickerIds (which contains slugs)
-              const packStickers = stickers.filter(sticker => 
-                pack.stickerIds.some(packStickerId => 
-                  sticker.slug === packStickerId || 
-                  sticker.name.toLowerCase().replace(/\s+/g, '-') === packStickerId ||
-                  sticker.name.toLowerCase().includes(packStickerId.toLowerCase())
-                )
-              );
-              
-              console.log(`🔍 Pack "${pack.name}" stickers:`, {
-                packId: pack.id,
-                expectedStickerIds: pack.stickerIds,
-                foundStickers: packStickers.map(s => ({ id: s.id, name: s.name, slug: s.slug })),
-                allStickers: stickers.slice(0, 3).map(s => ({ id: s.id, name: s.name, slug: s.slug }))
-              });
-              
-              const stickerForDownload: StickerForDownload[] = packStickers.map(
-                (sticker) => ({
-                  id: sticker.id,
-                  name: sticker.name,
-                  tags: sticker.tags || [],
-                  imageUrl: sticker.file_url,
-                })
-              );
+          <ErrorBoundary>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredPacks.map((pack) => {
+                // For database packs, find stickers by pack.stickerIds (which contains slugs)
+                const packStickers = stickers.filter(sticker => 
+                  pack.stickerIds.some(packStickerId => 
+                    sticker.slug === packStickerId || 
+                    sticker.name.toLowerCase().replace(/\s+/g, '-') === packStickerId ||
+                    sticker.name.toLowerCase().includes(packStickerId.toLowerCase())
+                  )
+                );
+                
+                console.log(`🔍 Pack "${pack.name}" stickers:`, {
+                  packId: pack.id,
+                  expectedStickerIds: pack.stickerIds,
+                  foundStickers: packStickers.map(s => ({ id: s.id, name: s.name, slug: s.slug })),
+                  allStickers: stickers.slice(0, 3).map(s => ({ id: s.id, name: s.name, slug: s.slug }))
+                });
+                
+                const stickerForDownload: StickerForDownload[] = packStickers.map(
+                  (sticker) => ({
+                    id: sticker.id,
+                    name: sticker.name,
+                    tags: sticker.tags || [],
+                    imageUrl: sticker.file_url,
+                  })
+                );
 
-              return (
-                <PackCard
-                  key={pack.id}
-                  pack={pack}
-                  stickers={stickerForDownload}
-                  onDownload={handleDownload}
-                  onBulkDownloadComplete={handleBulkDownloadComplete}
-                />
-              );
-            })}
-          </div>
+                return (
+                  <ErrorBoundary key={pack.id}>
+                    <PackCard
+                      pack={pack}
+                      stickers={stickerForDownload}
+                      onDownload={handleDownload}
+                      onBulkDownloadComplete={handleBulkDownloadComplete}
+                    />
+                  </ErrorBoundary>
+                );
+              })}
+            </div>
+          </ErrorBoundary>
         ) : (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">📦</div>

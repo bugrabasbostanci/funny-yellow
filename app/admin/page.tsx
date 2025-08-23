@@ -65,7 +65,7 @@ export default function AdminDashboard() {
   }, []);
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('tr-TR', {
+    return new Date(dateString).toLocaleDateString('en-US', {
       day: 'numeric',
       month: 'short',
       hour: '2-digit',
@@ -88,7 +88,7 @@ export default function AdminDashboard() {
             <Link href="/">
               <Button variant="outline" className="flex items-center gap-2">
                 <Home className="h-4 w-4" />
-                Ana Sayfa
+                Home
               </Button>
             </Link>
           </div>

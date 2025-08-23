@@ -156,8 +156,8 @@ export default function EditPackPage() {
       
     } catch (error) {
       console.error("Error loading pack data:", error);
-      toast.error("Pack yüklenirken hata oluştu", {
-        description: "Pack bulunamadı veya erişim hatası oluştu"
+      toast.error("Error loading pack", {
+        description: "Pack not found or access error occurred"
       });
       router.push("/admin/packs");
     } finally {
@@ -178,13 +178,13 @@ export default function EditPackPage() {
         thumbnail_url: packThumbnail,
       });
 
-      toast.success("Pack başarıyla güncellendi!", {
-        description: "Tüm değişiklikler kaydedildi"
+      toast.success("Pack successfully updated!", {
+        description: "All changes have been saved"
       });
     } catch (error) {
       console.error("Error saving pack:", error);
-      toast.error("Pack kaydedilirken hata oluştu", {
-        description: "Lütfen tekrar deneyin"
+      toast.error("Error saving pack", {
+        description: "Please try again"
       });
     } finally {
       setSaving(false);

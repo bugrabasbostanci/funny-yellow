@@ -342,8 +342,8 @@ export default function AdminUpload() {
       }
     } catch (error) {
       console.error("Batch processing error:", error);
-      toast.error("Batch işlemi başarısız", {
-        description: error instanceof Error ? error.message : "Bilinmeyen hata",
+      toast.error("Batch operation failed", {
+        description: error instanceof Error ? error.message : "Unknown error",
       });
 
       // Reset progress on error

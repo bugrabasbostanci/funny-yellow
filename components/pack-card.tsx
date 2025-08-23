@@ -11,7 +11,7 @@ import { type StickerForDownload } from "@/lib/bulk-download-utils";
 import Image from "next/image";
 
 // Helper component for preview images with fallback
-function PreviewImage({ stickerId, character, alt }: { stickerId: string; character: string; alt: string }) {
+function PreviewImage({ imageUrl, character, alt }: { imageUrl?: string; character: string; alt: string }) {
   const [imageError, setImageError] = useState(false);
   
   const getCharacterEmoji = (char: string) => {
@@ -26,14 +26,7 @@ function PreviewImage({ stickerId, character, alt }: { stickerId: string; charac
     }
   };
 
-  // Known missing files - show emoji directly
-  const knownMissingFiles = [
-    'pocoyo-laughing',
-    'pocoyo-hush', 
-    'pocoyo-flower'
-  ];
-
-  if (imageError || knownMissingFiles.includes(stickerId)) {
+  if (imageError || !imageUrl) {
     return (
       <div className="w-full h-full flex items-center justify-center text-2xl">
         {getCharacterEmoji(character)}
@@ -43,14 +36,13 @@ function PreviewImage({ stickerId, character, alt }: { stickerId: string; charac
 
   return (
     <Image
-      src={`/stickers/source/${stickerId}.png`}
+      src={imageUrl}
       alt={alt}
       width={80}
       height={80}
       className="w-full h-full object-contain"
       onError={() => {
-        const url = `/stickers/source/${stickerId}.png`;
-        console.log(`❌ Failed to load image: ${url}`);
+        console.log(`❌ Failed to load image: ${imageUrl}`);
         setImageError(true);
       }}
     />
@@ -98,13 +90,13 @@ export function PackCard({
 
           {/* Preview Grid */}
           <div className="grid grid-cols-3 gap-2 mb-4">
-            {pack.previewStickers.slice(0, 3).map((stickerId, index) => (
+            {stickers.slice(0, 3).map((sticker, index) => (
               <div
-                key={`${stickerId}-${index}`}
+                key={`${sticker.id}-${index}`}
                 className="aspect-square bg-muted/50 rounded-lg overflow-hidden flex items-center justify-center"
               >
                 <PreviewImage
-                  stickerId={stickerId}
+                  imageUrl={sticker.imageUrl}
                   character={pack.character}
                   alt={`${pack.character} sticker`}
                 />

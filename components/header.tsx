@@ -2,24 +2,14 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Github, Heart, Settings, LogOut } from "lucide-react";
+import { Github, Heart } from "lucide-react";
 import Image from "next/image";
 import { AdminAuthModal } from "@/components/admin-auth-modal";
 import { useAdminAuth } from "@/lib/admin-auth-context";
 
 export function Header() {
-  const { isAuthenticated, login, logout } = useAdminAuth();
+  const { login } = useAdminAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
-
-  const handleAdminClick = () => {
-    if (isAuthenticated) {
-      // If authenticated, navigate to admin
-      window.location.href = "/admin";
-    } else {
-      // If not authenticated, show auth modal
-      setShowAuthModal(true);
-    }
-  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -44,31 +34,8 @@ export function Header() {
             </div>
           </div>
 
-
           {/* Action Buttons */}
           <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex items-center space-x-2 text-muted-foreground hover:text-foreground"
-              onClick={handleAdminClick}
-            >
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Admin</span>
-            </Button>
-
-            {isAuthenticated && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex items-center space-x-2 text-muted-foreground hover:text-foreground"
-                onClick={logout}
-                title="Admin logout"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            )}
-
             <Button
               variant="ghost"
               size="sm"
@@ -95,7 +62,7 @@ export function Header() {
           </div>
         </div>
       </div>
-      
+
       <AdminAuthModal
         open={showAuthModal}
         onOpenChange={setShowAuthModal}

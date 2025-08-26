@@ -30,6 +30,7 @@ npm run lint
 - **UI Components**: Radix UI + Shadcn UI (New York style)
 - **Typography**: Inter + Fredoka fonts from Google Fonts
 - **Icons**: Lucide React
+- **Analytics**: Microsoft Clarity for user behavior tracking
 
 ### Project Structure
 - `/app` - Next.js App Router pages and layouts

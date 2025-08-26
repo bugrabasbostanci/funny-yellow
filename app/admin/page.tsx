@@ -3,7 +3,7 @@
 export const runtime = 'edge';
 
 import { useState, useEffect } from "react";
-import { AdminRouteGuard } from "@/components/admin-route-guard";
+import { AdminAuthModal } from "@/components/admin-auth-modal";
 import {
   Card,
   CardContent,
@@ -13,8 +13,9 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Image as ImageIcon, BarChart3, Clock, TrendingUp, Download, Package, Home } from "lucide-react";
+import { Upload, Image as ImageIcon, BarChart3, Clock, TrendingUp, Download, Package, Home, LogOut } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface Stats {
   totalStickers: number;
@@ -36,33 +37,78 @@ interface PopularSticker {
   download_count: number;
 }
 
-export default function AdminDashboard() {
+export default function AdminPage() {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentUploads, setRecentUploads] = useState<RecentUpload[]>([]);
   const [popularStickers, setPopularStickers] = useState<PopularSticker[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadDashboardData = async () => {
-      try {
-        const response = await fetch('/api/admin/stats');
-        if (!response.ok) {
-          throw new Error('Failed to load stats');
-        }
-        const data = await response.json();
+    const checkAuth = () => {
+      const authState = localStorage.getItem("admin_authenticated");
+      const authTime = localStorage.getItem("admin_auth_time");
+      
+      if (authState === "true" && authTime) {
+        // Check if auth is still valid (24 hours)
+        const now = Date.now();
+        const authTimestamp = parseInt(authTime);
+        const twentyFourHours = 24 * 60 * 60 * 1000;
         
-        setStats(data.stats);
-        setRecentUploads(data.recentUploads);
-        setPopularStickers(data.popularStickers);
-      } catch (error) {
-        console.error('Error loading dashboard data:', error);
-      } finally {
-        setLoading(false);
+        if (now - authTimestamp < twentyFourHours) {
+          setIsAuthenticated(true);
+        } else {
+          // Auth expired, clear storage
+          localStorage.removeItem("admin_authenticated");
+          localStorage.removeItem("admin_auth_time");
+          setIsAuthenticated(false);
+        }
       }
+      
+      setIsLoading(false);
     };
 
-    loadDashboardData();
+    checkAuth();
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      const loadDashboardData = async () => {
+        try {
+          const response = await fetch('/api/admin/stats');
+          if (!response.ok) {
+            throw new Error('Failed to load stats');
+          }
+          const data = await response.json();
+          
+          setStats(data.stats);
+          setRecentUploads(data.recentUploads);
+          setPopularStickers(data.popularStickers);
+        } catch (error) {
+          console.error('Error loading dashboard data:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      loadDashboardData();
+    }
+  }, [isAuthenticated]);
+
+  const handleAuthSuccess = () => {
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    setIsLoggingOut(true);
+    localStorage.removeItem("admin_authenticated");
+    localStorage.removeItem("admin_auth_time");
+    setIsAuthenticated(false);
+    router.push("/");
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -73,8 +119,41 @@ export default function AdminDashboard() {
     });
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-600 mx-auto mb-2"></div>
+          <p className="text-gray-600">Yetki kontrol ediliyor...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoggingOut) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-600 mx-auto mb-2"></div>
+          <p className="text-gray-600">Çıkış yapılıyor...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-50 flex items-center justify-center p-4">
+        <AdminAuthModal 
+          open={true} 
+          onOpenChange={() => {}} 
+          onAuthSuccess={handleAuthSuccess}
+        />
+      </div>
+    );
+  }
+
   return (
-    <AdminRouteGuard>
       <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-50 p-6">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
@@ -85,12 +164,22 @@ export default function AdminDashboard() {
               </h1>
               <p className="text-gray-600">Sticker management and upload operations</p>
             </div>
-            <Link href="/">
-              <Button variant="outline" className="flex items-center gap-2">
-                <Home className="h-4 w-4" />
-                Home
+            <div className="flex items-center gap-2">
+              <Link href="/">
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Home className="h-4 w-4" />
+                  Home
+                </Button>
+              </Link>
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
               </Button>
-            </Link>
+            </div>
           </div>
         </div>
 
@@ -280,6 +369,5 @@ export default function AdminDashboard() {
         )}
       </div>
       </div>
-    </AdminRouteGuard>
   );
 }

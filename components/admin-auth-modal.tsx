@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,7 @@ interface AdminAuthModalProps {
 }
 
 export function AdminAuthModal({ open, onOpenChange, onAuthSuccess }: AdminAuthModalProps) {
+  const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -74,6 +76,11 @@ export function AdminAuthModal({ open, onOpenChange, onAuthSuccess }: AdminAuthM
     onOpenChange(newOpen);
   };
 
+  const handleCancel = () => {
+    handleOpenChange(false);
+    router.push('/');
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -124,7 +131,7 @@ export function AdminAuthModal({ open, onOpenChange, onAuthSuccess }: AdminAuthM
             <Button
               type="button"
               variant="outline"
-              onClick={() => handleOpenChange(false)}
+              onClick={handleCancel}
               disabled={loading}
             >
               Cancel

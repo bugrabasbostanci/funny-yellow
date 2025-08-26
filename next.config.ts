@@ -57,7 +57,7 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              "default-src 'self'; img-src 'self' data: https: blob:; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://xvwaasarrkyxczhwwiqs.supabase.co;",
+              "default-src 'self'; img-src 'self' data: https: blob:; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.clarity.ms https://scripts.clarity.ms; style-src 'self' 'unsafe-inline'; connect-src 'self' https://xvwaasarrkyxczhwwiqs.supabase.co https://www.clarity.ms https://k.clarity.ms;",
           },
         ],
       },

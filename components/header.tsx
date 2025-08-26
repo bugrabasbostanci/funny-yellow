@@ -50,15 +50,6 @@ export function Header() {
               <Github className="h-4 w-4" />
               <span>GitHub</span>
             </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="hidden sm:flex items-center space-x-2 bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300"
-            >
-              <Heart className="h-4 w-4" />
-              <span>Support</span>
-            </Button>
           </div>
         </div>
       </div>

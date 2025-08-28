@@ -40,11 +40,10 @@ export function StickerCard({
   onDownload,
   onPreview,
 }: StickerCardProps) {
-  const [isHovered, setIsHovered] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showAllTags, setShowAllTags] = useState(false);
-  
+
   // Debouncing for download action
   const downloadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastDownloadTimeRef = useRef<number>(0);
@@ -74,29 +73,31 @@ export function StickerCard({
   const handleDownload = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     // Debouncing: prevent rapid clicks
     const now = Date.now();
     const DEBOUNCE_TIME = 1000; // 1 second debounce
-    
+
     if (now - lastDownloadTimeRef.current < DEBOUNCE_TIME) {
-      console.log(`⚠️ Download debounced for sticker ${id} - too soon after last click`);
+      console.log(
+        `⚠️ Download debounced for sticker ${id} - too soon after last click`
+      );
       return;
     }
-    
+
     if (isDownloading) {
       console.log(`⚠️ Download already in progress for sticker ${id}`);
       return;
     }
-    
+
     // Clear any existing timeout
     if (downloadTimeoutRef.current) {
       clearTimeout(downloadTimeoutRef.current);
     }
-    
+
     lastDownloadTimeRef.current = now;
     setIsDownloading(true);
-    
+
     console.log(`🔽 Starting debounced download for sticker ${id}`);
 
     try {
@@ -120,7 +121,10 @@ export function StickerCard({
       link.href = blobUrl;
       // Use platform detection to determine file format
       const recommendedFormat = SimplePlatformDetection.getRecommendedFormat();
-      link.download = `${name.replace(/\s+/g, "_")}_sticker.${recommendedFormat}`;
+      link.download = `${name.replace(
+        /\s+/g,
+        "_"
+      )}-sticker.${recommendedFormat}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -150,8 +154,6 @@ export function StickerCard({
             ? "ring-2 ring-primary ring-offset-2 rounded-md"
             : ""
         }`}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
         onClick={selectionMode ? handleSelectionToggle : handlePreview}
       >
         {/* Sticker Container */}
@@ -160,13 +162,13 @@ export function StickerCard({
           {selectionMode && (
             <div className="absolute top-2 right-2 z-10">
               <div
-                className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
+                className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
                   isSelected
                     ? "bg-primary text-primary-foreground"
                     : "bg-white border border-gray-300"
                 }`}
               >
-                {isSelected && <Check className="w-4 h-4" />}
+                {isSelected && <Check className="w-5 h-5" />}
               </div>
             </div>
           )}
@@ -179,13 +181,9 @@ export function StickerCard({
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
 
-          {/* Hover Actions - Only show in normal mode */}
+          {/* Hover Actions - Only show in normal mode and on hover (desktop only) */}
           {!selectionMode && (
-            <div
-              className={`absolute inset-0 bg-black/20 flex items-center justify-center gap-2 transition-opacity duration-300 ${
-                isHovered ? "opacity-100" : "opacity-0"
-              }`}
-            >
+            <div className="absolute inset-0 bg-black/20 flex items-center justify-center gap-2 transition-opacity duration-300 opacity-0 md:hover:opacity-100 pointer-events-none md:hover:pointer-events-auto">
               <Button
                 size="sm"
                 variant="secondary"

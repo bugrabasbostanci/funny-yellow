@@ -8,6 +8,7 @@ import { StickerGrid } from "./sticker-grid";
 import { StickerPagination } from "./sticker-pagination";
 import { DownloadOptionsModal } from "./download-options-modal";
 import { ErrorBoundary } from "./error-boundary";
+import { SkeletonGrid } from "./skeleton-card";
 import { DatabaseService } from "@/lib/database-service";
 import { type Database } from "@/lib/supabase";
 import { type StickerForDownload } from "@/lib/bulk-download-utils";
@@ -319,17 +320,26 @@ export function StickerGallery() {
     return (
       <section className="py-8">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading stickers...</p>
+          <div className="mb-8">
+            <div className="h-8 bg-muted/50 rounded w-64 animate-pulse mb-4"></div>
+            <div className="h-5 bg-muted/50 rounded w-80 animate-pulse"></div>
           </div>
+          <div className="mb-6">
+            <div className="h-11 bg-muted/50 rounded-lg animate-pulse mb-6"></div>
+            <div className="flex flex-wrap gap-2 mb-6">
+              <div className="h-11 w-16 bg-muted/50 rounded-md animate-pulse"></div>
+              <div className="h-11 w-20 bg-muted/50 rounded-md animate-pulse"></div>
+              <div className="h-11 w-24 bg-muted/50 rounded-md animate-pulse"></div>
+            </div>
+          </div>
+          <SkeletonGrid count={12} />
         </div>
       </section>
     );
   }
 
   return (
-    <section className="py-8">
+    <section id="sticker-gallery" className="py-4 sm:py-6 lg:py-8 scroll-mt-20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Database error indicator */}
         {error && (

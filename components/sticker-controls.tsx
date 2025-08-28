@@ -26,8 +26,8 @@ export function StickerControls({
   selectedTag,
 }: StickerControlsProps) {
   return (
-    <div className="flex items-center justify-between mb-6">
-      <p className="text-sm text-muted-foreground">
+    <div className="flex items-center justify-between mb-4 sm:mb-6">
+      <p className="text-xs sm:text-sm text-muted-foreground">
         {selectionMode ? (
           <span className="flex items-center gap-2 flex-wrap">
             <Badge
@@ -67,28 +67,28 @@ export function StickerControls({
           variant={stickerSize === "small" ? "default" : "ghost"}
           size="sm"
           onClick={() => setStickerSize("small")}
-          className="h-8 w-8 p-0"
+          className="h-9 w-9 sm:h-11 sm:w-11 p-0"
           title="Small size"
         >
-          <Grid3X3 className="h-4 w-4" />
+          <Grid3X3 className="h-3 w-3 sm:h-4 sm:w-4" />
         </Button>
         <Button
           variant={stickerSize === "medium" ? "default" : "ghost"}
           size="sm"
           onClick={() => setStickerSize("medium")}
-          className="h-8 w-8 p-0"
+          className="h-9 w-9 sm:h-11 sm:w-11 p-0"
           title="Medium size"
         >
-          <Grid2X2 className="h-4 w-4" />
+          <Grid2X2 className="h-3 w-3 sm:h-4 sm:w-4" />
         </Button>
         <Button
           variant={stickerSize === "large" ? "default" : "ghost"}
           size="sm"
           onClick={() => setStickerSize("large")}
-          className="h-8 w-8 p-0"
+          className="h-9 w-9 sm:h-11 sm:w-11 p-0"
           title="Large size"
         >
-          <LayoutGrid className="h-4 w-4" />
+          <LayoutGrid className="h-3 w-3 sm:h-4 sm:w-4" />
         </Button>
       </div>
     </div>

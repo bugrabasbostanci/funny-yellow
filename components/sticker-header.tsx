@@ -26,14 +26,13 @@ export function StickerHeader({
   isAllSelected,
 }: StickerHeaderProps) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
       <div>
-        <h2 className="text-2xl sm:text-3xl font-bold font-display mb-2">
+        <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold font-display mb-1 sm:mb-2">
           Sticker Gallery
         </h2>
-        <p className="text-muted-foreground">
-          Discover {stickersCount} free stickers with {popularTagsCount}
-          + popular tags
+        <p className="text-sm sm:text-base text-muted-foreground">
+          Discover {stickersCount} free stickers with {popularTagsCount}+ popular tags
         </p>
       </div>
 

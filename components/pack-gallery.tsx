@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, ArrowLeft, X } from "lucide-react";
 import { ErrorBoundary } from "./error-boundary";
+import { SkeletonPackGrid } from "./skeleton-pack";
 import { loadPacksFromDatabase, type StickerPack } from "@/lib/pack-definitions";
 import { DatabaseService } from "@/lib/database-service";
 import { type Database } from "@/lib/supabase";
@@ -129,10 +130,12 @@ export function PackGallery() {
     return (
       <section className="py-8">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading sticker packs...</p>
+          <div className="mb-8">
+            <div className="h-8 bg-muted/50 rounded w-48 animate-pulse mb-4"></div>
+            <div className="h-5 bg-muted/50 rounded w-96 animate-pulse mb-6"></div>
+            <div className="h-11 bg-muted/50 rounded-lg animate-pulse mb-6"></div>
           </div>
+          <SkeletonPackGrid count={8} />
         </div>
       </section>
     );

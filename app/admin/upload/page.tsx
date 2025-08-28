@@ -99,34 +99,38 @@ export default function AdminUpload() {
     },
   ];
 
-  const commonTags = [
-    "emoji",
-    "random",
-    "animal",
-    "funny",
-    "meme",
-    "happy",
-    "sad",
-    "angry",
-    "love",
-    "party",
-    "cool",
-  ];
-
   const generateSmartTags = (fileName: string): string[] => {
     const tags: string[] = [];
     const lowerFileName = fileName.toLowerCase();
+
+    // Character-based tags
+    if (lowerFileName.includes("kermit")) tags.push("kermit");
+    if (lowerFileName.includes("pingu")) tags.push("pingu");
+    if (lowerFileName.includes("pepe")) tags.push("pepe");
+    if (lowerFileName.includes("pocoyo")) tags.push("pocoyo");
+    if (lowerFileName.includes("random")) tags.push("random");
+    if (lowerFileName.includes("spongebob")) tags.push("spongebob");
+    if (lowerFileName.includes("stickman")) tags.push("stickman");
+    if (
+      (lowerFileName.includes("tom") && lowerFileName.includes("jerry")) ||
+      lowerFileName.includes("tomjerry") ||
+      lowerFileName.includes("tom-jerry")
+    )
+      tags.push("tom and jerry");
+    if (lowerFileName.includes("emoji")) tags.push("emoji");
 
     // Emotion-based tags
     if (
       lowerFileName.includes("happy") ||
       lowerFileName.includes("smile") ||
+      lowerFileName.includes("smiling") ||
       lowerFileName.includes("joy")
     )
       tags.push("happy");
     if (
       lowerFileName.includes("sad") ||
       lowerFileName.includes("cry") ||
+      lowerFileName.includes("crying") ||
       lowerFileName.includes("tear")
     )
       tags.push("sad");
@@ -145,6 +149,7 @@ export default function AdminUpload() {
     if (
       lowerFileName.includes("funny") ||
       lowerFileName.includes("laugh") ||
+      lowerFileName.includes("laughing") ||
       lowerFileName.includes("lol")
     )
       tags.push("funny");
@@ -224,7 +229,10 @@ export default function AdminUpload() {
     const files = Array.from(event.target.files || []);
     const newStickerFiles: StickerFile[] = files.map((file) => ({
       file,
-      name: file.name.split(".")[0].replace(/[-_]/g, " "),
+      name: file.name
+        .split(".")[0]
+        .replace(/[-_]/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase()),
       tags: generateSmartTags(file.name),
     }));
     setSelectedFiles((prev) => [...prev, ...newStickerFiles]);
@@ -662,25 +670,6 @@ export default function AdminUpload() {
                                 }
                               }}
                             />
-                          </div>
-
-                          {/* Common Tags */}
-                          <div className="flex flex-wrap gap-1">
-                            {commonTags.slice(0, 6).map((tag) => (
-                              <button
-                                key={tag}
-                                type="button"
-                                onClick={() => {
-                                  if (!sticker.tags.includes(tag)) {
-                                    addTag(index, tag);
-                                  }
-                                }}
-                                disabled={sticker.tags.includes(tag)}
-                                className="bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 px-2 py-1 rounded text-xs transition-colors"
-                              >
-                                {tag}
-                              </button>
-                            ))}
                           </div>
                         </div>
                       </div>

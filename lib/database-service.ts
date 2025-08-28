@@ -96,9 +96,10 @@ export class DatabaseService {
       return acc;
     }, {} as Record<string, number>);
 
-    // Return sorted by popularity (most used first)
+    // Return sorted by popularity (most used first), limited to top 10
     return Object.entries(tagCounts)
       .sort(([, a], [, b]) => b - a)
+      .slice(0, 10)
       .map(([tag, count]) => ({ tag, count }));
   }
 

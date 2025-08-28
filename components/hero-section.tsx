@@ -45,20 +45,24 @@ export function HeroSection() {
 
                   function smoothStep(timestamp: number) {
                     if (!start) start = timestamp;
-                    const progress = Math.min((timestamp - start) / duration, 1);
-                    
+                    const progress = Math.min(
+                      (timestamp - start) / duration,
+                      1
+                    );
+
                     // Smooth easing function
-                    const ease = progress < 0.5 
-                      ? 2 * progress * progress 
-                      : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-                    
+                    const ease =
+                      progress < 0.5
+                        ? 2 * progress * progress
+                        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
                     window.scrollTo(0, startPosition + distance * ease);
-                    
+
                     if (progress < 1) {
                       requestAnimationFrame(smoothStep);
                     }
                   }
-                  
+
                   requestAnimationFrame(smoothStep);
                 }
               }}
@@ -78,10 +82,10 @@ export function HeroSection() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 gap-4 sm:gap-6 max-w-xs sm:max-w-lg mx-auto">
+          <div className="grid grid-cols-3 gap-4 sm:gap-6 max-w-xs sm:max-w-lg mx-auto">
             <div className="text-center">
               <div className="text-xl sm:text-2xl font-bold text-primary font-display">
-                80+
+                450+
               </div>
               <div className="text-xs sm:text-sm text-muted-foreground">
                 Stickers
@@ -93,6 +97,14 @@ export function HeroSection() {
               </div>
               <div className="text-xs sm:text-sm text-muted-foreground">
                 Free
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-xl sm:text-2xl font-bold text-primary font-display">
+                10
+              </div>
+              <div className="text-xs sm:text-sm text-muted-foreground">
+                Packs
               </div>
             </div>
           </div>

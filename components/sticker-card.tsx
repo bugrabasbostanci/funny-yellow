@@ -151,7 +151,7 @@ export function StickerCard({
       <div
         className={`group relative cursor-pointer ${
           selectionMode && isSelected
-            ? "ring-2 ring-primary ring-offset-2 rounded-md"
+            ? "ring-2 ring-primary ring-offset-4 rounded-2xl"
             : ""
         }`}
         onClick={selectionMode ? handleSelectionToggle : handlePreview}
@@ -162,13 +162,13 @@ export function StickerCard({
           {selectionMode && (
             <div className="absolute top-2 right-2 z-10">
               <div
-                className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
+                className={`w-8 h-8 md:w-6 md:h-6 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
                   isSelected
                     ? "bg-primary text-primary-foreground"
                     : "bg-white border border-gray-300"
                 }`}
               >
-                {isSelected && <Check className="w-5 h-5" />}
+                {isSelected && <Check className="w-4 h-4 md:w-3 md:h-3" />}
               </div>
             </div>
           )}
@@ -234,7 +234,7 @@ export function StickerCard({
               <div className="flex items-center justify-end text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <span>{downloadCount.toLocaleString()} downloads</span>
-                  {downloadCount > 20000 && (
+                  {downloadCount > 100 && (
                     <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">
                       🔥 Trending
                     </span>

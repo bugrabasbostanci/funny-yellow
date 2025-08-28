@@ -8,13 +8,13 @@ export function Footer() {
           </div>
 
           <div className="flex items-center space-x-6 text-sm text-muted-foreground">
-            <a href="#" className="hover:text-foreground transition-colors">
+            <a href="/privacy" className="hover:text-foreground transition-colors">
               Privacy
             </a>
-            <a href="#" className="hover:text-foreground transition-colors">
+            <a href="/terms" className="hover:text-foreground transition-colors">
               Terms
             </a>
-            <a href="#" className="hover:text-foreground transition-colors">
+            <a href="/contact" className="hover:text-foreground transition-colors">
               Contact
             </a>
           </div>

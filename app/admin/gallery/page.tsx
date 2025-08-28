@@ -14,6 +14,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   ArrowLeft,
   Search,
   Edit,
@@ -22,6 +32,7 @@ import {
   Grid3X3,
   Grid2X2,
   LayoutGrid,
+  AlertTriangle,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -48,6 +59,9 @@ export default function AdminGallery() {
   const [selectedTag, setSelectedTag] = useState("all");
   const [loading, setLoading] = useState(true);
   const [stickerSize, setStickerSize] = useState<StickerSize>("medium");
+  const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
+  const [deleteAllStep, setDeleteAllStep] = useState(1);
+  const [confirmationText, setConfirmationText] = useState("");
 
   const allTags = [
     "all",
@@ -146,6 +160,69 @@ export default function AdminGallery() {
           error instanceof Error ? error.message : "Bilinmeyen hata oluştu",
       });
     }
+  };
+
+  const deleteAllStickers = async () => {
+    if (deleteAllStep === 3 && confirmationText !== "DELETE ALL") {
+      toast.error("Delete operation cancelled", {
+        description: "You must type 'DELETE ALL' exactly to confirm",
+      });
+      return;
+    }
+
+    setLoading(true);
+    setShowDeleteAllDialog(false);
+
+    try {
+      const response = await fetch("/api/admin/stickers?deleteAll=true", {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Delete all failed");
+      }
+
+      const result = await response.json();
+
+      // Clear local state
+      setStickers([]);
+      setFilteredStickers([]);
+
+      // Reset dialog state
+      setDeleteAllStep(1);
+      setConfirmationText("");
+
+      toast.success("Tüm sticker'lar silindi", {
+        description: `${result.deletedCount} sticker başarıyla silindi`,
+      });
+    } catch (error) {
+      console.error("Delete all error:", error);
+      toast.error("Sticker'lar silinemedi", {
+        description:
+          error instanceof Error ? error.message : "Bilinmeyen hata oluştu",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAllClick = () => {
+    setDeleteAllStep(1);
+    setConfirmationText("");
+    setShowDeleteAllDialog(true);
+  };
+
+  const handleDialogNext = () => {
+    if (deleteAllStep < 3) {
+      setDeleteAllStep(deleteAllStep + 1);
+    }
+  };
+
+  const handleDialogCancel = () => {
+    setShowDeleteAllDialog(false);
+    setDeleteAllStep(1);
+    setConfirmationText("");
   };
 
   const getGridClasses = () => {
@@ -272,9 +349,23 @@ export default function AdminGallery() {
         </div>
 
         <div className="mb-4 flex justify-between items-center">
-          <p className="text-gray-600">
-            Showing {filteredStickers.length} stickers
-          </p>
+          <div className="flex items-center gap-4">
+            <p className="text-gray-600">
+              Showing {filteredStickers.length} stickers
+            </p>
+            {stickers.length > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDeleteAllClick}
+                className="flex items-center gap-2"
+                disabled={loading}
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete All Stickers
+              </Button>
+            )}
+          </div>
 
           {/* Size Control Buttons */}
           <div className="flex items-center gap-1 bg-white rounded-lg p-1 shadow-sm border">
@@ -424,6 +515,84 @@ export default function AdminGallery() {
             </p>
           </div>
         )}
+
+        {/* Delete All Alert Dialog */}
+        <AlertDialog
+          open={showDeleteAllDialog}
+          onOpenChange={setShowDeleteAllDialog}
+        >
+          <AlertDialogContent className="max-w-md">
+            <AlertDialogHeader>
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+                <AlertDialogTitle>
+                  {deleteAllStep === 1 && "Delete All Stickers?"}
+                  {deleteAllStep === 2 && "Final Warning"}
+                  {deleteAllStep === 3 && "Type Confirmation"}
+                </AlertDialogTitle>
+              </div>
+              <AlertDialogDescription>
+                {deleteAllStep === 1 && (
+                  <>
+                    This will permanently delete{" "}
+                    <strong>ALL {stickers.length} stickers</strong> from your
+                    database.
+                    <br />
+                    <br />
+                    This action <strong>cannot be undone</strong>. Are you sure
+                    you want to continue?
+                  </>
+                )}
+                {deleteAllStep === 2 && (
+                  <>
+                    🚨 <strong>FINAL WARNING</strong>
+                    <br />
+                    <br />
+                    You are about to permanently delete all stickers. This will
+                    remove all sticker data, files, and metadata.
+                    <br />
+                    <br />
+                    Are you absolutely certain you want to proceed?
+                  </>
+                )}
+                {deleteAllStep === 3 && (
+                  <>
+                    To confirm this dangerous action, please type{" "}
+                    <strong>&quot;DELETE ALL&quot;</strong> in the field below:
+                    <Input
+                      value={confirmationText}
+                      onChange={(e) => setConfirmationText(e.target.value)}
+                      placeholder="Type DELETE ALL here..."
+                      className="mt-3"
+                      autoComplete="off"
+                    />
+                  </>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={handleDialogCancel}>
+                Cancel
+              </AlertDialogCancel>
+              {deleteAllStep < 3 ? (
+                <AlertDialogAction
+                  onClick={handleDialogNext}
+                  className="bg-red-500 hover:bg-red-600"
+                >
+                  {deleteAllStep === 1 ? "Continue" : "I'm Sure"}
+                </AlertDialogAction>
+              ) : (
+                <AlertDialogAction
+                  onClick={deleteAllStickers}
+                  disabled={confirmationText !== "DELETE ALL"}
+                  className="bg-red-500 hover:bg-red-600 disabled:opacity-50"
+                >
+                  Delete All Forever
+                </AlertDialogAction>
+              )}
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { Inter, Fredoka } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ClarityProvider } from "@/components/clarity-provider";
+import { WebVitals } from "@/components/web-vitals";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://funnyyellow.com"),
   title: "Funny Yellow - Free WhatsApp Stickers | Download Instantly",
   description:
-    "Make Chat Fun Again! 🎉 Download high-quality, funny stickers for WhatsApp instantly. 100% free sticker collection with easy WhatsApp integration.",
+    "Make Chat Fun Again! Download high-quality, funny stickers for WhatsApp instantly. 100% free sticker collection with easy WhatsApp integration.",
   keywords: [
     "WhatsApp stickers",
     "free stickers",
@@ -90,6 +91,7 @@ export default function RootLayout({
     >
       <body className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-50">
         <ClarityProvider />
+        <WebVitals />
         {children}
         <Toaster />
       </body>

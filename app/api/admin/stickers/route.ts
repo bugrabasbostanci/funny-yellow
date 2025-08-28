@@ -108,12 +108,50 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE - Remove a sticker
+// DELETE - Remove a sticker or all stickers
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const deleteAll = searchParams.get('deleteAll');
 
+    // Delete all stickers
+    if (deleteAll === 'true') {
+      console.log('🚨 DELETE ALL STICKERS operation initiated');
+      
+      // First get count of stickers to be deleted
+      const { count, error: countError } = await supabaseAdmin
+        .from('stickers')
+        .select('*', { count: 'exact', head: true });
+
+      if (countError) {
+        console.error('Count error:', countError);
+        return NextResponse.json({ error: 'Failed to count stickers' }, { status: 500 });
+      }
+
+      console.log(`Attempting to delete ${count} stickers`);
+
+      // Delete all stickers
+      const { error } = await supabaseAdmin
+        .from('stickers')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // This will match all records
+
+      if (error) {
+        console.error('Delete all error:', error);
+        return NextResponse.json({ error: 'Delete all failed' }, { status: 500 });
+      }
+
+      console.log(`✅ Successfully deleted all ${count} stickers`);
+
+      return NextResponse.json({ 
+        success: true,
+        message: 'All stickers deleted successfully',
+        deletedCount: count || 0
+      });
+    }
+
+    // Delete single sticker
     if (!id) {
       return NextResponse.json({ error: 'Sticker ID required' }, { status: 400 });
     }

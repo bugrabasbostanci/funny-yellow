@@ -59,6 +59,61 @@ export class DatabaseService {
     return data || [];
   }
 
+  // Get stickers with pagination info (for infinite scroll)
+  static async getStickersPaginated(options: {
+    limit: number;
+    offset: number;
+    search?: string;
+    tag?: string;
+  }) {
+    console.log(`🔄 Fetching paginated stickers: offset=${options.offset}, limit=${options.limit}`);
+    
+    let query = supabase
+      .from("stickers")
+      .select("*", { count: 'exact' })
+      .order("created_at", { ascending: false });
+
+    // Apply search filter
+    if (options.search) {
+      query = query.or(
+        `name.ilike.%${options.search}%,tags.cs.{${options.search}}`
+      );
+    }
+
+    // Apply tag filter
+    if (options.tag && options.tag !== "all") {
+      query = query.contains('tags', [options.tag]);
+    }
+
+    // Apply pagination
+    query = query.range(
+      options.offset,
+      options.offset + options.limit - 1
+    );
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error("Error fetching paginated stickers:", error);
+      throw new Error("Failed to fetch stickers");
+    }
+
+    const totalCount = count || 0;
+    const hasMore = (options.offset + options.limit) < totalCount;
+
+    console.log(
+      `📊 Paginated fetch: ${data?.length || 0} stickers, total: ${totalCount}, hasMore: ${hasMore}`
+    );
+
+    return {
+      stickers: data || [],
+      totalCount,
+      hasMore,
+      currentOffset: options.offset,
+      nextOffset: hasMore ? options.offset + options.limit : null,
+    };
+  }
+
   // Get a single sticker by ID
   static async getSticker(id: string) {
     const { data, error } = await supabase

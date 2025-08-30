@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import type React from "react";
 import Image from "next/image";
 
@@ -11,10 +12,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Download, Eye, Check } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
 import { SimplePlatformDetection } from "@/lib/simple-platform-detection";
 
-interface StickerCardProps {
+interface LazyStickerCardProps {
   id: string;
   name: string;
   imageUrl: string;
@@ -28,7 +28,7 @@ interface StickerCardProps {
   onPreview?: (id: string) => void;
 }
 
-export function StickerCard({
+export function LazyStickerCard({
   id,
   name,
   imageUrl,
@@ -39,14 +39,39 @@ export function StickerCard({
   onSelectionChange,
   onDownload,
   onPreview,
-}: StickerCardProps) {
+}: LazyStickerCardProps) {
+  const [inView, setInView] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showAllTags, setShowAllTags] = useState(false);
-
-  // Debouncing for download action
+  
+  const cardRef = useRef<HTMLDivElement>(null);
   const downloadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastDownloadTimeRef = useRef<number>(0);
+
+  // Manual Intersection Observer for this card
+  useEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          console.log(`🔍 Card ${name} entered viewport - starting image load`);
+          setInView(true);
+          observer.unobserve(card);
+        }
+      },
+      { 
+        threshold: 0.1,
+        rootMargin: '50px' // Start loading 50px before entering viewport
+      }
+    );
+
+    observer.observe(card);
+    return () => observer.disconnect();
+  }, [name]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -60,7 +85,7 @@ export function StickerCard({
 
   const handlePreview = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (selectionMode) return; // Don't open preview in selection mode
+    if (selectionMode) return;
     setShowPreview(true);
     onPreview?.(id);
   };
@@ -74,14 +99,12 @@ export function StickerCard({
     e.preventDefault();
     e.stopPropagation();
 
-    // Debouncing: prevent rapid clicks
+    // Debouncing logic
     const now = Date.now();
-    const DEBOUNCE_TIME = 1000; // 1 second debounce
+    const DEBOUNCE_TIME = 1000;
 
     if (now - lastDownloadTimeRef.current < DEBOUNCE_TIME) {
-      console.log(
-        `⚠️ Download debounced for sticker ${id} - too soon after last click`
-      );
+      console.log(`⚠️ Download debounced for sticker ${id}`);
       return;
     }
 
@@ -90,7 +113,6 @@ export function StickerCard({
       return;
     }
 
-    // Clear any existing timeout
     if (downloadTimeoutRef.current) {
       clearTimeout(downloadTimeoutRef.current);
     }
@@ -102,8 +124,6 @@ export function StickerCard({
 
     try {
       const url = imageUrl || "/placeholder.svg";
-
-      // Try to fetch the image first to handle CORS
       const response = await fetch(url, {
         mode: "cors",
         credentials: "omit",
@@ -114,28 +134,19 @@ export function StickerCard({
       }
 
       const blob = await response.blob();
-
-      // Create download link with blob URL
       const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = blobUrl;
-      // Use platform detection to determine file format
       const recommendedFormat = SimplePlatformDetection.getRecommendedFormat();
-      link.download = `${name.replace(
-        /\s+/g,
-        "_"
-      )}-sticker.${recommendedFormat}`;
+      link.download = `${name.replace(/\s+/g, "_")}-sticker.${recommendedFormat}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-
-      // Clean up blob URL
       URL.revokeObjectURL(blobUrl);
 
       onDownload?.(id);
     } catch (error) {
       console.error("Error downloading sticker:", error);
-      // Fallback: open in new tab if download fails
       try {
         window.open(imageUrl, "_blank");
       } catch (fallbackError) {
@@ -149,6 +160,7 @@ export function StickerCard({
   return (
     <>
       <div
+        ref={cardRef}
         className={`group relative cursor-pointer ${
           selectionMode && isSelected
             ? "ring-2 ring-primary ring-offset-4 rounded-2xl"
@@ -173,20 +185,49 @@ export function StickerCard({
             </div>
           )}
 
-          <Image
-            src={imageUrl || "/placeholder.svg"}
-            alt={name}
-            fill
-            loading="lazy"
-            priority={false}
-            placeholder="blur"
-            blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjMyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiNmM2Y0ZjYiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiNlNWU3ZWIiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2cpIi8+PC9zdmc+"
-            className="object-contain transition-transform duration-200 group-hover:scale-105"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
+          {/* Show placeholder until in view */}
+          {!inView ? (
+            <div className="absolute inset-0 bg-gradient-to-br from-muted/30 to-muted/50 rounded-xl m-4 flex items-center justify-center">
+              <div className="text-muted-foreground text-xs text-center p-2">
+                📖 Manual Lazy Loading
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Loading state */}
+              {!imageLoaded && (
+                <div className="absolute inset-0 bg-muted/30 rounded-xl m-4 animate-pulse flex items-center justify-center">
+                  <div className="text-muted-foreground text-xs">Loading...</div>
+                </div>
+              )}
+              
+              {/* Actual image */}
+              <Image
+                src={imageUrl || "/placeholder.svg"}
+                alt={name}
+                fill
+                loading="eager" // We control loading manually
+                priority={false}
+                className={`object-contain transition-all duration-300 ${
+                  imageLoaded 
+                    ? 'opacity-100 scale-100 group-hover:scale-105' 
+                    : 'opacity-0 scale-95'
+                }`}
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                onLoad={() => {
+                  console.log(`✅ Image loaded for ${name}`);
+                  setImageLoaded(true);
+                }}
+                onError={() => {
+                  console.error(`❌ Image failed to load for ${name}`);
+                  setImageLoaded(true); // Still show placeholder
+                }}
+              />
+            </>
+          )}
 
-          {/* Hover Actions - Only show in normal mode and on hover (desktop only) */}
-          {!selectionMode && (
+          {/* Hover Actions */}
+          {!selectionMode && inView && (
             <div className="absolute inset-0 bg-black/20 flex items-center justify-center gap-2 transition-opacity duration-300 opacity-0 md:hover:opacity-100 pointer-events-none md:hover:pointer-events-auto">
               <Button
                 size="sm"
@@ -210,7 +251,7 @@ export function StickerCard({
           )}
         </div>
 
-        {/* Minimal Info */}
+        {/* Info */}
         <div className="mt-2 px-1">
           <p className="text-sm font-medium text-foreground truncate leading-tight text-center">
             {name}
@@ -218,7 +259,7 @@ export function StickerCard({
         </div>
       </div>
 
-      {/* Preview Modal */}
+      {/* Preview Modal - only load when needed */}
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

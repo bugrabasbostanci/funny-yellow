@@ -29,9 +29,12 @@ export function StickerGallery() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Infinite scroll pagination state
+  // Server-side pagination state
   const [displayedStickers, setDisplayedStickers] = useState<StickerData[]>([]);
   const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentOffset, setCurrentOffset] = useState(0);
   const itemsPerPage = 24;
 
   // Bulk download state
@@ -42,121 +45,142 @@ export function StickerGallery() {
   const [stickerSize, setStickerSize] = useState<StickerSize>("medium");
   const [showDownloadModal, setShowDownloadModal] = useState(false);
 
-  // Load stickers and popular tags on component mount
+  // Load initial data on component mount
   useEffect(() => {
-    const loadData = async () => {
+    const loadInitialData = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Add a small delay to ensure database consistency
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        console.log("🔄 Loading initial data with server-side pagination...");
 
-        // Fetch from database
-        const [stickersData, tagsData] = await Promise.all([
-          DatabaseService.getStickers(),
+        // Fetch first page of stickers and popular tags
+        const [paginatedData, tagsData] = await Promise.all([
+          DatabaseService.getStickersPaginated({
+            limit: itemsPerPage,
+            offset: 0,
+            search: searchQuery || undefined,
+            tag: selectedTag !== "all" ? selectedTag : undefined,
+          }),
           DatabaseService.getPopularTags(),
         ]);
 
         console.log(
-          "✅ Database connection successful, loaded",
-          stickersData.length,
-          "stickers"
+          "✅ Initial server-side fetch successful:",
+          `${paginatedData.stickers.length} stickers,`,
+          `total: ${paginatedData.totalCount},`,
+          `hasMore: ${paginatedData.hasMore}`
         );
 
-        // Log a sample of download counts when loading from database
-        const sampleStickers = stickersData.slice(0, 3);
-        console.log(
-          "📊 Sample download counts from database:",
-          sampleStickers.map((s) => ({
-            id: s.id.slice(0, 8),
-            name: s.name,
-            download_count: s.download_count,
-          }))
-        );
-
-        // Double-check first few stickers for consistency
-        console.log("🔍 Checking data consistency...");
-        for (const sticker of sampleStickers) {
-          try {
-            const freshData = await DatabaseService.getSticker(sticker.id);
-            if (freshData.download_count !== sticker.download_count) {
-              console.warn(
-                `⚠️ Data inconsistency detected for ${sticker.name}: list shows ${sticker.download_count}, fresh query shows ${freshData.download_count}`
-              );
-            }
-          } catch (err) {
-            console.error(`❌ Could not verify sticker ${sticker.id}:`, err);
-          }
-        }
-        setStickers(stickersData);
+        setDisplayedStickers(paginatedData.stickers);
+        setHasMore(paginatedData.hasMore);
+        setTotalCount(paginatedData.totalCount);
+        setCurrentOffset(paginatedData.nextOffset || 0);
         setPopularTags(tagsData);
+
+        // Keep stickers state for compatibility (but it won't contain all data)
+        setStickers(paginatedData.stickers);
       } catch (error) {
-        console.error("❌ Database connection failed:", error);
+        console.error("❌ Initial data loading failed:", error);
         setError("Unable to load stickers from database. Please try refreshing the page.");
-        setStickers([]);
+        setDisplayedStickers([]);
         setPopularTags([]);
       } finally {
         setLoading(false);
       }
     };
 
-    loadData();
-  }, []);
+    loadInitialData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount - filters handled by separate useEffect
 
-  const filteredStickers = useMemo(() => {
-    let filtered = stickers;
+  // Server-side filtering - trigger new API call when filters change
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  
+  useEffect(() => {
+    const reloadWithFilters = async () => {
+      if (!initialLoadComplete) {
+        setInitialLoadComplete(true);
+        return; // Skip first run, let initial load handle it
+      }
+      
+      try {
+        setLoadingMore(true);
+        console.log("🔄 Filters changed, reloading data from server...");
 
-    // Filter by tag
-    if (selectedTag !== "all") {
-      filtered = filtered.filter((sticker) =>
-        sticker.tags?.includes(selectedTag)
-      );
-    }
+        const paginatedData = await DatabaseService.getStickersPaginated({
+          limit: itemsPerPage,
+          offset: 0, // Reset to first page
+          search: searchQuery || undefined,
+          tag: selectedTag !== "all" ? selectedTag : undefined,
+        });
 
-    // Filter by search query
-    if (searchQuery) {
-      filtered = filtered.filter((sticker) => {
-        const nameMatch = sticker.name
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase());
-        const tagMatch = sticker.tags?.some((tag) =>
-          tag.toLowerCase().includes(searchQuery.toLowerCase())
+        console.log(
+          "✅ Filter reload successful:",
+          `${paginatedData.stickers.length} stickers,`,
+          `total: ${paginatedData.totalCount}`
         );
-        return nameMatch || tagMatch;
-      });
+
+        setDisplayedStickers(paginatedData.stickers);
+        setHasMore(paginatedData.hasMore);
+        setTotalCount(paginatedData.totalCount);
+        setCurrentOffset(paginatedData.nextOffset || 0);
+      } catch (error) {
+        console.error("❌ Filter reload failed:", error);
+        setError("Failed to apply filters. Please try again.");
+      } finally {
+        setLoadingMore(false);
+      }
+    };
+
+    reloadWithFilters();
+  }, [selectedTag, searchQuery, initialLoadComplete]); // Trigger when filters change
+
+  // Load more stickers from server (true infinite scroll)
+  const loadMoreStickers = useCallback(async () => {
+    if (loadingMore || !hasMore) {
+      console.log("⚠️ Load more skipped:", { loadingMore, hasMore });
+      return;
     }
 
-    return filtered;
-  }, [stickers, selectedTag, searchQuery]);
+    try {
+      setLoadingMore(true);
+      console.log("🔄 Loading more stickers from server:", { currentOffset, itemsPerPage });
 
-  // Load more stickers for infinite scroll
-  const loadMoreStickers = useCallback(() => {
-    const startIndex = displayedStickers.length;
-    const endIndex = startIndex + itemsPerPage;
-    const newStickers = filteredStickers.slice(startIndex, endIndex);
+      const paginatedData = await DatabaseService.getStickersPaginated({
+        limit: itemsPerPage,
+        offset: currentOffset,
+        search: searchQuery || undefined,
+        tag: selectedTag !== "all" ? selectedTag : undefined,
+      });
 
-    if (newStickers.length > 0) {
+      console.log(
+        "✅ Load more successful:",
+        `${paginatedData.stickers.length} new stickers,`,
+        `hasMore: ${paginatedData.hasMore}`
+      );
+
       setDisplayedStickers((prev) => {
         // Prevent duplicates by checking existing IDs
         const existingIds = new Set(prev.map((s) => s.id));
-        const uniqueNewStickers = newStickers.filter(
+        const uniqueNewStickers = paginatedData.stickers.filter(
           (s) => !existingIds.has(s.id)
         );
         return [...prev, ...uniqueNewStickers];
       });
-      setHasMore(endIndex < filteredStickers.length);
-    } else {
-      setHasMore(false);
+      
+      setHasMore(paginatedData.hasMore);
+      setCurrentOffset(paginatedData.nextOffset || currentOffset);
+      
+    } catch (error) {
+      console.error("❌ Load more failed:", error);
+      setError("Failed to load more stickers. Please try again.");
+    } finally {
+      setLoadingMore(false);
     }
-  }, [filteredStickers, displayedStickers.length, itemsPerPage]);
+  }, [loadingMore, hasMore, currentOffset, searchQuery, selectedTag, itemsPerPage]);
 
-  // Reset pagination when filters change
-  useEffect(() => {
-    const initialStickers = filteredStickers.slice(0, itemsPerPage);
-    setDisplayedStickers(initialStickers);
-    setHasMore(filteredStickers.length > itemsPerPage);
-  }, [filteredStickers, itemsPerPage]);
+  // No need for client-side reset - server handles filtering
 
   const handleDownload = async (stickerId: string) => {
     console.log("🔽 Download started for sticker:", stickerId);
@@ -181,10 +205,12 @@ export function StickerGallery() {
     }
   };
 
-  // Helper function to refresh individual sticker data
+  // Helper function to refresh individual sticker data in displayed list
   const refreshStickerData = async (stickerId: string) => {
     try {
       const updatedSticker = await DatabaseService.getSticker(stickerId);
+      
+      // Update both stickers and displayedStickers for compatibility
       setStickers((prevStickers) =>
         prevStickers.map((sticker) =>
           sticker.id === stickerId
@@ -192,6 +218,15 @@ export function StickerGallery() {
             : sticker
         )
       );
+      
+      setDisplayedStickers((prevDisplayed) =>
+        prevDisplayed.map((sticker) =>
+          sticker.id === stickerId
+            ? { ...sticker, download_count: updatedSticker.download_count }
+            : sticker
+        )
+      );
+      
       console.log(
         `🔄 Updated UI: sticker ${stickerId} now shows download_count: ${updatedSticker.download_count}`
       );
@@ -351,7 +386,7 @@ export function StickerGallery() {
         )}
 
         <StickerHeader
-          stickersCount={stickers.length}
+          stickersCount={totalCount}
           popularTagsCount={popularTags.length}
           selectionMode={selectionMode}
           selectedStickers={selectedStickers}
@@ -400,9 +435,10 @@ export function StickerGallery() {
           <StickerPagination
             hasMore={hasMore}
             displayedStickers={displayedStickers}
-            filteredStickers={filteredStickers}
+            filteredStickers={displayedStickers}
             itemsPerPage={itemsPerPage}
             loadMoreStickers={loadMoreStickers}
+            loadingMore={loadingMore}
           />
         </ErrorBoundary>
 

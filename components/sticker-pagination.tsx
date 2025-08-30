@@ -10,7 +10,8 @@ interface StickerPaginationProps {
   displayedStickers: StickerData[];
   filteredStickers: StickerData[];
   itemsPerPage: number;
-  loadMoreStickers: () => void;
+  loadMoreStickers: () => Promise<void>;
+  loadingMore?: boolean;
 }
 
 export function StickerPagination({
@@ -19,6 +20,7 @@ export function StickerPagination({
   filteredStickers,
   itemsPerPage,
   loadMoreStickers,
+  loadingMore = false,
 }: StickerPaginationProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -28,22 +30,25 @@ export function StickerPagination({
     if (!sentinel || !hasMore) return;
 
     const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore) {
-          loadMoreStickers();
+      async (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
+          await loadMoreStickers();
         }
       },
-      { threshold: 0.1 }
+      { 
+        threshold: 0.3, // Increase threshold for better performance
+        rootMargin: '100px' // Start loading 100px before entering viewport
+      }
     );
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [loadMoreStickers, hasMore]);
+  }, [loadMoreStickers, hasMore, loadingMore]);
 
   return (
     <>
       {/* Infinite Scroll Sentinel */}
-      {hasMore && displayedStickers.length > 0 && (
+      {(hasMore || loadingMore) && displayedStickers.length > 0 && (
         <div ref={sentinelRef} className="mt-8 py-8">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -55,6 +60,13 @@ export function StickerPagination({
               </div>
             ))}
           </div>
+          {loadingMore && (
+            <div className="text-center mt-4">
+              <p className="text-sm text-muted-foreground">
+                Loading more stickers...
+              </p>
+            </div>
+          )}
         </div>
       )}
 

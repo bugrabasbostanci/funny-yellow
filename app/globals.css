@@ -213,3 +213,34 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Custom animations for scroll-to-top button */
+@keyframes slide-in-from-right-2 {
+  from {
+    transform: translateX(8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-from-bottom-2 {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-from-right-2 {
+  animation: slide-in-from-right-2 0.3s ease-out;
+}
+
+.animate-slide-in-from-bottom-2 {
+  animation: slide-in-from-bottom-2 0.3s ease-out;
+}

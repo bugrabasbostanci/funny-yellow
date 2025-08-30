@@ -7,6 +7,7 @@ import { StickerControls } from "./sticker-controls";
 import { StickerGrid } from "./sticker-grid";
 import { StickerPagination } from "./sticker-pagination";
 import { DownloadOptionsModal } from "./download-options-modal";
+import { ScrollToTopButton } from "./scroll-to-top-button";
 import { ErrorBoundary } from "./error-boundary";
 import { SkeletonGrid } from "./skeleton-card";
 import { DatabaseService } from "@/lib/database-service";
@@ -451,6 +452,12 @@ export function StickerGallery() {
           onBulkDownloadComplete={handleBulkDownloadComplete}
         />
       </div>
+
+      {/* Scroll to Top Button - positioned outside container for fixed positioning */}
+      <ScrollToTopButton 
+        showAfter={800}
+        className="animate-in slide-in-from-right-2 fade-in-0 duration-500"
+      />
     </section>
   );
 }

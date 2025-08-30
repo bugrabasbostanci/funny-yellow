@@ -1,9 +1,8 @@
 "use client";
 
-export const runtime = 'edge';
+export const runtime = "edge";
 
 import { useState } from "react";
-import { useAdminAuth } from "@/lib/admin-auth-context";
 import {
   Card,
   CardContent,
@@ -62,24 +61,24 @@ export default function AdminScripts() {
     );
 
     try {
-      const response = await fetch('/api/admin/run-script', {
-        method: 'POST',
+      const response = await fetch("/api/admin/run-script", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ script: scriptName }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to start script');
+        throw new Error("Failed to start script");
       }
 
       // Handle Server-Sent Events
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
-      
+
       if (!reader) {
-        throw new Error('No response body');
+        throw new Error("No response body");
       }
 
       while (true) {
@@ -87,30 +86,35 @@ export default function AdminScripts() {
         if (done) break;
 
         const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
-        
+        const lines = chunk.split("\n");
+
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
+          if (line.startsWith("data: ")) {
             try {
               const data = JSON.parse(line.slice(6));
-              
+
               setScripts((prev) =>
                 prev.map((script) =>
                   script.name === scriptName
                     ? {
                         ...script,
-                        status: data.type === 'end' ? (data.success ? 'success' : 'error') : 'running',
+                        status:
+                          data.type === "end"
+                            ? data.success
+                              ? "success"
+                              : "error"
+                            : "running",
                         output: [...script.output, data.message || data.data],
                       }
                     : script
                 )
               );
-              
-              if (data.type === 'end') {
+
+              if (data.type === "end") {
                 break;
               }
             } catch {
-              console.warn('Failed to parse SSE data:', line);
+              console.warn("Failed to parse SSE data:", line);
             }
           }
         }
@@ -124,7 +128,9 @@ export default function AdminScripts() {
                 status: "error",
                 output: [
                   ...script.output,
-                  `❌ ${scriptName} hata aldı: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`,
+                  `❌ ${scriptName} hata aldı: ${
+                    error instanceof Error ? error.message : "Bilinmeyen hata"
+                  }`,
                 ],
               }
             : script
@@ -135,33 +141,35 @@ export default function AdminScripts() {
 
   const runAllScripts = async () => {
     try {
-      const scriptNames = scripts.map(s => s.name);
-      
+      const scriptNames = scripts.map((s) => s.name);
+
       // Set all scripts to initial state
-      setScripts(prev => prev.map(script => ({ 
-        ...script, 
-        status: 'idle', 
-        output: [] 
-      })));
-      
-      const response = await fetch('/api/admin/process-files', {
-        method: 'POST',
+      setScripts((prev) =>
+        prev.map((script) => ({
+          ...script,
+          status: "idle",
+          output: [],
+        }))
+      );
+
+      const response = await fetch("/api/admin/process-files", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ scripts: scriptNames }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to start pipeline');
+        throw new Error("Failed to start pipeline");
       }
 
       // Handle Server-Sent Events for pipeline
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
-      
+
       if (!reader) {
-        throw new Error('No response body');
+        throw new Error("No response body");
       }
 
       while (true) {
@@ -169,23 +177,30 @@ export default function AdminScripts() {
         if (done) break;
 
         const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
-        
+        const lines = chunk.split("\n");
+
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
+          if (line.startsWith("data: ")) {
             try {
               const data = JSON.parse(line.slice(6));
-              
-              if (data.type === 'step_start') {
+
+              if (data.type === "step_start") {
                 // Mark current script as running
                 setScripts((prev) =>
                   prev.map((script) =>
                     script.name === data.script
-                      ? { ...script, status: 'running', output: [`${data.script} başlatılıyor...`] }
+                      ? {
+                          ...script,
+                          status: "running",
+                          output: [`${data.script} başlatılıyor...`],
+                        }
                       : script
                   )
                 );
-              } else if (data.type === 'step_output' || data.type === 'step_error') {
+              } else if (
+                data.type === "step_output" ||
+                data.type === "step_error"
+              ) {
                 // Add output to current script
                 setScripts((prev) =>
                   prev.map((script) =>
@@ -194,34 +209,34 @@ export default function AdminScripts() {
                       : script
                   )
                 );
-              } else if (data.type === 'step_complete') {
+              } else if (data.type === "step_complete") {
                 // Mark script as complete
                 setScripts((prev) =>
                   prev.map((script) =>
                     script.name === data.script
-                      ? { 
-                          ...script, 
-                          status: data.success ? 'success' : 'error',
-                          output: [...script.output, data.message]
+                      ? {
+                          ...script,
+                          status: data.success ? "success" : "error",
+                          output: [...script.output, data.message],
                         }
                       : script
                   )
                 );
               }
-              
-              if (data.type === 'pipeline_complete') {
+
+              if (data.type === "pipeline_complete") {
                 break;
               }
             } catch {
-              console.warn('Failed to parse pipeline SSE data:', line);
+              console.warn("Failed to parse pipeline SSE data:", line);
             }
           }
         }
       }
     } catch (error) {
-      console.error('Pipeline error:', error);
+      console.error("Pipeline error:", error);
       toast.error("Pipeline hata aldı", {
-        description: error instanceof Error ? error.message : 'Bilinmeyen hata'
+        description: error instanceof Error ? error.message : "Bilinmeyen hata",
       });
     }
   };

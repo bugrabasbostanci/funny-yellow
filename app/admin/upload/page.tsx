@@ -4,6 +4,7 @@ export const runtime = "edge";
 
 import { useState } from "react";
 import { useAdminAuth } from "@/lib/admin-auth-context";
+import { AdminRouteGuard } from "@/components/admin-route-guard";
 import {
   Card,
   CardContent,
@@ -392,7 +393,8 @@ export default function AdminUpload() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-50 p-6">
+    <AdminRouteGuard>
+      <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-50 p-6">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <Link
@@ -687,5 +689,6 @@ export default function AdminUpload() {
         </div>
       </div>
     </div>
+    </AdminRouteGuard>
   );
 }

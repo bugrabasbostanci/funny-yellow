@@ -4,6 +4,7 @@ export const runtime = "edge";
 
 import { useState, useEffect } from "react";
 import { useAdminAuth } from "@/lib/admin-auth-context";
+import { AdminRouteGuard } from "@/components/admin-route-guard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -318,7 +319,8 @@ export default function AdminGallery() {
   const cardClasses = getCardClasses();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-50 p-6">
+    <AdminRouteGuard>
+      <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-50 p-6">
       <div className="max-w-6xl mx-auto">
         <div className="mb-6">
           <Link
@@ -647,5 +649,6 @@ export default function AdminGallery() {
         </AlertDialog>
       </div>
     </div>
+    </AdminRouteGuard>
   );
 }

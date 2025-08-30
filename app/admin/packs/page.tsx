@@ -3,6 +3,7 @@
 export const runtime = 'edge';
 
 import { useState, useEffect, useCallback } from "react";
+import { AdminRouteGuard } from "@/components/admin-route-guard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -120,7 +121,8 @@ export default function AdminPacksPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-50 p-6">
+    <AdminRouteGuard>
+      <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-50 p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
@@ -323,5 +325,6 @@ export default function AdminPacksPage() {
         )}
       </div>
     </div>
+    </AdminRouteGuard>
   );
 }

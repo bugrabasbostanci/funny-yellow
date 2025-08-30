@@ -43,6 +43,10 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("admin_token");
     localStorage.removeItem("admin_auth_time");
     localStorage.removeItem("admin_authenticated");
+    
+    // Clear the cookie
+    document.cookie = 'admin_token=; Path=/; Max-Age=0; SameSite=Strict';
+    
     setToken(null);
     setIsAuthenticated(false);
   };
@@ -52,6 +56,12 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("admin_token", newToken);
     localStorage.setItem("admin_auth_time", now.toString());
     localStorage.setItem("admin_authenticated", "true"); // Backward compatibility
+    
+    // Set HTTP-only cookie for server-side validation
+    // Note: This will be set as a regular cookie since we can't set HTTP-only from client
+    // In production, consider handling this server-side
+    document.cookie = `admin_token=${newToken}; Path=/; Max-Age=${24 * 60 * 60}; SameSite=Strict; Secure=${window.location.protocol === 'https:'}`;
+    
     setToken(newToken);
     setIsAuthenticated(true);
   };

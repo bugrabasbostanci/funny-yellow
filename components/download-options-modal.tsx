@@ -1,12 +1,19 @@
 "use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { MessageCircle, Download, Package } from "lucide-react";
 import { WhatsAppStickerService } from "@/lib/whatsapp-integration";
-import { BulkDownloadService, type StickerForDownload } from "@/lib/bulk-download-utils";
-import { SimplePlatformDetection } from "@/lib/simple-platform-detection";
+import {
+  BulkDownloadService,
+  type StickerForDownload,
+} from "@/lib/bulk-download-utils";
 import { DatabaseService } from "@/lib/database-service";
 import { useState } from "react";
 
@@ -18,40 +25,41 @@ interface DownloadOptionsModalProps {
   onBulkDownloadComplete?: (stickerIds: string[]) => void;
 }
 
-type DownloadType = 'individual' | 'zip' | 'whatsapp';
+type DownloadType = "individual" | "zip" | "whatsapp";
 
-export function DownloadOptionsModal({ 
-  stickers, 
-  isOpen, 
-  onClose, 
-  onDownload, 
-  onBulkDownloadComplete 
+export function DownloadOptionsModal({
+  stickers,
+  isOpen,
+  onClose,
+  onDownload,
+  onBulkDownloadComplete,
 }: DownloadOptionsModalProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadType, setDownloadType] = useState<DownloadType | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  
-  // Platform detection for smart defaults
-  const recommendedFormat = SimplePlatformDetection.getRecommendedFormat();
 
   const handleDownload = async (type: DownloadType) => {
     if (stickers.length === 0) return;
-    
+
     setIsDownloading(true);
     setDownloadType(type);
-    
+
     try {
       switch (type) {
-        case 'individual':
-          await BulkDownloadService.downloadIndividualStickers(stickers);
+        case "individual":
+          // PNG format for WhatsApp Desktop compatibility
+          await BulkDownloadService.downloadIndividualStickers(stickers, "png");
           break;
-        case 'zip':
+        case "zip":
+          // PNG format for WhatsApp Desktop compatibility
           await BulkDownloadService.downloadAsZip(
             stickers,
-            `Sticker Pack - ${new Date().toLocaleDateString()}`
+            `Sticker Pack - ${new Date().toLocaleDateString()}`,
+            "png"
           );
           break;
-        case 'whatsapp':
+        case "whatsapp":
+          // WebP format for WhatsApp Mobile & Web
           const stickerPack = await WhatsAppStickerService.createStickerPack(
             stickers,
             `Custom Pack ${new Date().toLocaleDateString()}`
@@ -59,32 +67,36 @@ export function DownloadOptionsModal({
           await WhatsAppStickerService.downloadStickerPack(stickerPack);
           break;
       }
-      
+
       // Track downloads for all stickers efficiently in one batch
       try {
-        console.log(`🔄 Tracking bulk download for ${stickers.length} stickers`);
-        
+        console.log(
+          `🔄 Tracking bulk download for ${stickers.length} stickers`
+        );
+
         await DatabaseService.trackBulkDownload(
-          stickers.map(s => s.id),
+          stickers.map((s) => s.id),
           "0.0.0.0", // IP address - could be improved with actual client IP
           navigator.userAgent
         );
-        
+
         // Notify parent component that bulk download completed
-        onBulkDownloadComplete?.(stickers.map(s => s.id));
-        
-        console.log(`✅ Bulk download tracking completed for ${stickers.length} stickers`);
+        onBulkDownloadComplete?.(stickers.map((s) => s.id));
+
+        console.log(
+          `✅ Bulk download tracking completed for ${stickers.length} stickers`
+        );
       } catch (trackingError) {
         console.error("❌ Error tracking bulk download:", trackingError);
         // Fallback to individual tracking if bulk fails
         console.log("🔄 Falling back to individual download tracking...");
         if (onDownload) {
-          stickers.forEach(sticker => {
+          stickers.forEach((sticker) => {
             onDownload(sticker.id);
           });
         }
       }
-      
+
       setTimeout(() => {
         onClose();
         setIsDownloading(false);
@@ -109,13 +121,16 @@ export function DownloadOptionsModal({
           <p className="text-sm text-muted-foreground">
             Choose how to download your {stickers.length} selected stickers:
           </p>
-          
+
           {/* Sticker Preview */}
           <div className="grid grid-cols-4 gap-2">
             {stickers.slice(0, 8).map((sticker) => (
-              <div key={sticker.id} className="relative aspect-square bg-background rounded border">
-                <Image 
-                  src={sticker.imageUrl} 
+              <div
+                key={sticker.id}
+                className="relative aspect-square bg-background rounded border"
+              >
+                <Image
+                  src={sticker.imageUrl}
                   alt={sticker.name}
                   fill
                   className="object-contain p-1"
@@ -132,44 +147,48 @@ export function DownloadOptionsModal({
 
           {/* Download Options */}
           <div className="space-y-2">
-            {/* WhatsApp Pack - Primary option */}
+            {/* WhatsApp Mobile - Primary option */}
             <Button
               variant="outline"
               className="w-full justify-between p-4 h-auto border-2 border-green-200 hover:border-green-400"
-              onClick={() => handleDownload('whatsapp')}
+              onClick={() => handleDownload("whatsapp")}
               disabled={isDownloading || isWhatsAppDisabled}
             >
               <div className="flex items-center gap-3">
                 <MessageCircle className="w-5 h-5 text-green-600" />
                 <div className="text-left">
-                  <div className="font-semibold text-green-700">WhatsApp Mobile</div>
+                  <div className="font-semibold text-green-700">
+                    WhatsApp Mobile & Web
+                  </div>
                   <div className="text-xs text-muted-foreground">
-                    WebP format for mobile WhatsApp
+                    WebP format for mobile app & web browser
                   </div>
                 </div>
               </div>
-              {isDownloading && downloadType === 'whatsapp' && (
+              {isDownloading && downloadType === "whatsapp" && (
                 <div className="text-xs text-green-600">Downloading...</div>
               )}
             </Button>
 
-            {/* Quick Download - Platform optimized */}
+            {/* PNG Download - Desktop optimized */}
             <Button
               variant="outline"
               className="w-full justify-between p-4 h-auto border-2 border-blue-200 hover:border-blue-400"
-              onClick={() => handleDownload('individual')}
+              onClick={() => handleDownload("individual")}
               disabled={isDownloading}
             >
               <div className="flex items-center gap-3">
                 <Download className="w-5 h-5 text-blue-600" />
                 <div className="text-left">
-                  <div className="font-medium text-blue-700">Universal Format</div>
+                  <div className="font-medium text-blue-700">
+                    WhatsApp Desktop
+                  </div>
                   <div className="text-xs text-muted-foreground">
-                    {recommendedFormat.toUpperCase()} - works everywhere
+                    PNG format (required for Desktop app)
                   </div>
                 </div>
               </div>
-              {isDownloading && downloadType === 'individual' && (
+              {isDownloading && downloadType === "individual" && (
                 <div className="text-xs text-blue-600">Downloading...</div>
               )}
             </Button>
@@ -181,7 +200,9 @@ export function DownloadOptionsModal({
                 className="text-xs text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
                 disabled={isDownloading}
               >
-                {showAdvanced ? 'Hide advanced options' : 'Show advanced options'}
+                {showAdvanced
+                  ? "Hide advanced options"
+                  : "Show advanced options"}
               </button>
             </div>
 
@@ -190,7 +211,7 @@ export function DownloadOptionsModal({
               <Button
                 variant="outline"
                 className="w-full justify-between p-4 h-auto border border-gray-200"
-                onClick={() => handleDownload('zip')}
+                onClick={() => handleDownload("zip")}
                 disabled={isDownloading}
               >
                 <div className="flex items-center gap-3">
@@ -202,7 +223,7 @@ export function DownloadOptionsModal({
                     </div>
                   </div>
                 </div>
-                {isDownloading && downloadType === 'zip' && (
+                {isDownloading && downloadType === "zip" && (
                   <div className="text-xs text-gray-600">Downloading...</div>
                 )}
               </Button>

@@ -1,6 +1,5 @@
 import JSZip from 'jszip';
 import { WhatsAppStickerService } from './whatsapp-integration';
-import { SimplePlatformDetection } from './simple-platform-detection';
 
 export interface StickerForDownload {
   id: string;
@@ -18,7 +17,8 @@ export class BulkDownloadService {
   
   static async downloadAsZip(
     stickers: StickerForDownload[], 
-    packName: string = 'My Stickers'
+    packName: string = 'My Stickers',
+    format: 'webp' | 'png' = 'png'
   ): Promise<void> {
     if (stickers.length === 0) {
       throw new Error('No stickers selected for download');
@@ -43,9 +43,8 @@ export class BulkDownloadService {
           }
           
           const blob = await response.blob();
-          const fileExtension = SimplePlatformDetection.getRecommendedFormat();
           const sanitizedName = this.sanitizeFileName(sticker.name);
-          const fileName = `${sanitizedName}.${fileExtension}`;
+          const fileName = `${sanitizedName}.${format}`;
           
           // Add directly to ZIP root (no folders)
           zip.file(fileName, blob);
@@ -138,7 +137,8 @@ export class BulkDownloadService {
   }
 
   static async downloadIndividualStickers(
-    stickers: StickerForDownload[]
+    stickers: StickerForDownload[],
+    format: 'webp' | 'png' = 'png'
   ): Promise<void> {
     if (stickers.length === 0) {
       throw new Error('No stickers selected for download');
@@ -166,9 +166,8 @@ export class BulkDownloadService {
         }
         
         const blob = await response.blob();
-        const fileExtension = SimplePlatformDetection.getRecommendedFormat();
         const sanitizedName = this.sanitizeFileName(sticker.name);
-        const fileName = `${sanitizedName}.${fileExtension}`;
+        const fileName = `${sanitizedName}.${format}`;
         
         // Create download link
         const url = URL.createObjectURL(blob);

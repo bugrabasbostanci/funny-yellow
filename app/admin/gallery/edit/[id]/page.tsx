@@ -4,6 +4,7 @@ export const runtime = "edge";
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useAdminAuth } from "@/lib/admin-auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,7 @@ interface Sticker {
 }
 
 export default function EditSticker() {
+  const { getAuthHeader } = useAdminAuth();
   const router = useRouter();
   const params = useParams();
   const stickerId = params.id as string;
@@ -41,7 +43,12 @@ export default function EditSticker() {
   useEffect(() => {
     const loadSticker = async () => {
       try {
-        const response = await fetch(`/api/admin/stickers?limit=1000`);
+        const response = await fetch(`/api/admin/stickers?limit=1000`, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeader(),
+          },
+        });
         if (!response.ok) throw new Error("Failed to load stickers");
 
         const data = await response.json();
@@ -75,7 +82,7 @@ export default function EditSticker() {
     if (stickerId) {
       loadSticker();
     }
-  }, [stickerId, router]);
+  }, [stickerId, router, getAuthHeader]);
 
   const addTag = () => {
     if (newTag.trim() && !tags.includes(newTag.trim())) {
@@ -97,6 +104,7 @@ export default function EditSticker() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          ...getAuthHeader(),
         },
         body: JSON.stringify({
           id: sticker.id,
@@ -189,6 +197,8 @@ export default function EditSticker() {
                     }
                     alt={sticker.name}
                     fill
+                    priority={true}
+                    sizes="(max-width: 768px) 200px, 300px"
                     className="object-contain rounded-lg"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;

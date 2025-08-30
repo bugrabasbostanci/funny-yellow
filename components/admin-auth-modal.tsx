@@ -18,7 +18,7 @@ import { Lock } from "lucide-react";
 interface AdminAuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAuthSuccess: () => void;
+  onAuthSuccess: (token: string) => void;
 }
 
 export function AdminAuthModal({ open, onOpenChange, onAuthSuccess }: AdminAuthModalProps) {
@@ -44,12 +44,9 @@ export function AdminAuthModal({ open, onOpenChange, onAuthSuccess }: AdminAuthM
 
       const data = await response.json();
 
-      if (response.ok && data.success) {
-        // Store auth state in localStorage
-        localStorage.setItem("admin_authenticated", "true");
-        localStorage.setItem("admin_auth_time", data.timestamp.toString());
-        
-        onAuthSuccess();
+      if (response.ok && data.success && data.token) {
+        // Token'ı auth context'e aktar
+        onAuthSuccess(data.token);
         onOpenChange(false);
         
         // Reset form

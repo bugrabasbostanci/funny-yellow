@@ -3,6 +3,7 @@
 export const runtime = "edge";
 
 import { useState } from "react";
+import { useAdminAuth } from "@/lib/admin-auth-context";
 import {
   Card,
   CardContent,
@@ -54,6 +55,7 @@ interface ProcessingResult {
 }
 
 export default function AdminUpload() {
+  const { getAuthHeader } = useAdminAuth();
   const [selectedFiles, setSelectedFiles] = useState<StickerFile[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
@@ -320,6 +322,9 @@ export default function AdminUpload() {
       // Call the atomic batch processing API
       const response = await fetch("/api/admin/process-sticker-batch", {
         method: "POST",
+        headers: {
+          ...getAuthHeader(),
+        },
         body: formData,
       });
 

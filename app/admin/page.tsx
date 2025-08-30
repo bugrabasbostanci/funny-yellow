@@ -4,6 +4,7 @@ export const runtime = 'edge';
 
 import { useState, useEffect } from "react";
 import { AdminAuthModal } from "@/components/admin-auth-modal";
+import { useAdminAuth } from "@/lib/admin-auth-context";
 import {
   Card,
   CardContent,
@@ -39,7 +40,7 @@ interface PopularSticker {
 
 export default function AdminPage() {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isAuthenticated, login, logout, getAuthHeader } = useAdminAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -48,37 +49,20 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = () => {
-      const authState = localStorage.getItem("admin_authenticated");
-      const authTime = localStorage.getItem("admin_auth_time");
-      
-      if (authState === "true" && authTime) {
-        // Check if auth is still valid (24 hours)
-        const now = Date.now();
-        const authTimestamp = parseInt(authTime);
-        const twentyFourHours = 24 * 60 * 60 * 1000;
-        
-        if (now - authTimestamp < twentyFourHours) {
-          setIsAuthenticated(true);
-        } else {
-          // Auth expired, clear storage
-          localStorage.removeItem("admin_authenticated");
-          localStorage.removeItem("admin_auth_time");
-          setIsAuthenticated(false);
-        }
-      }
-      
-      setIsLoading(false);
-    };
-
-    checkAuth();
+    // Auth context zaten auth durumunu kontrol ediyor
+    setIsLoading(false);
   }, []);
 
   useEffect(() => {
     if (isAuthenticated) {
       const loadDashboardData = async () => {
         try {
-          const response = await fetch('/api/admin/stats');
+          const response = await fetch('/api/admin/stats', {
+            headers: {
+              'Content-Type': 'application/json',
+              ...getAuthHeader(),
+            },
+          });
           if (!response.ok) {
             throw new Error('Failed to load stats');
           }
@@ -96,17 +80,15 @@ export default function AdminPage() {
 
       loadDashboardData();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, getAuthHeader]);
 
-  const handleAuthSuccess = () => {
-    setIsAuthenticated(true);
+  const handleAuthSuccess = (token: string) => {
+    login(token);
   };
 
   const handleLogout = () => {
     setIsLoggingOut(true);
-    localStorage.removeItem("admin_authenticated");
-    localStorage.removeItem("admin_auth_time");
-    setIsAuthenticated(false);
+    logout();
     router.push("/");
   };
 

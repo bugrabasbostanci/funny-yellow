@@ -12,6 +12,12 @@ declare global {
 export function WebVitals() {
   useEffect(() => {
     if (typeof window === 'undefined') return
+    
+    // Development'ta performans izlemeyi devre dışı bırak
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🚫 WebVitals disabled in development mode');
+      return;
+    }
 
     // Simple performance logging for MVP
     const logVital = (name: string, value: number) => {

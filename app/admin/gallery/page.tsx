@@ -3,6 +3,7 @@
 export const runtime = "edge";
 
 import { useState, useEffect } from "react";
+import { useAdminAuth } from "@/lib/admin-auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,6 +54,7 @@ interface Sticker {
 type StickerSize = "small" | "medium" | "large";
 
 export default function AdminGallery() {
+  const { getAuthHeader } = useAdminAuth();
   const [stickers, setStickers] = useState<Sticker[]>([]);
   const [filteredStickers, setFilteredStickers] = useState<Sticker[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -62,6 +64,8 @@ export default function AdminGallery() {
   const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
   const [deleteAllStep, setDeleteAllStep] = useState(1);
   const [confirmationText, setConfirmationText] = useState("");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [stickerToDelete, setStickerToDelete] = useState<string | null>(null);
 
   const allTags = [
     "all",
@@ -87,7 +91,12 @@ export default function AdminGallery() {
     const loadStickers = async () => {
       setLoading(true);
       try {
-        const response = await fetch("/api/admin/stickers?limit=1000");
+        const response = await fetch("/api/admin/stickers?limit=1000", {
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeader(),
+          },
+        });
 
         if (!response.ok) {
           throw new Error("Failed to load stickers");
@@ -109,7 +118,7 @@ export default function AdminGallery() {
     };
 
     loadStickers();
-  }, []);
+  }, [getAuthHeader]);
 
   useEffect(() => {
     let filtered = stickers;
@@ -133,14 +142,21 @@ export default function AdminGallery() {
     setFilteredStickers(filtered);
   }, [stickers, searchTerm, selectedTag]);
 
-  const deleteSticker = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this sticker?")) {
-      return;
-    }
+  const handleDeleteClick = (id: string) => {
+    setStickerToDelete(id);
+    setShowDeleteDialog(true);
+  };
+
+  const deleteSticker = async () => {
+    if (!stickerToDelete) return;
 
     try {
-      const response = await fetch(`/api/admin/stickers?id=${id}`, {
+      const response = await fetch(`/api/admin/stickers?id=${stickerToDelete}`, {
         method: "DELETE",
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
       });
 
       if (!response.ok) {
@@ -149,10 +165,14 @@ export default function AdminGallery() {
       }
 
       // Remove from local state
-      setStickers((prev) => prev.filter((s) => s.id !== id));
+      setStickers((prev) => prev.filter((s) => s.id !== stickerToDelete));
       toast.success("Sticker başarıyla silindi", {
         description: "Sticker sisteminizden kaldırıldı",
       });
+      
+      // Close dialog and reset state
+      setShowDeleteDialog(false);
+      setStickerToDelete(null);
     } catch (error) {
       console.error("Delete error:", error);
       toast.error("Sticker silinemedi", {
@@ -176,6 +196,10 @@ export default function AdminGallery() {
     try {
       const response = await fetch("/api/admin/stickers?deleteAll=true", {
         method: "DELETE",
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
       });
 
       if (!response.ok) {
@@ -424,6 +448,8 @@ export default function AdminGallery() {
                         }
                         alt={sticker.name}
                         fill
+                        priority={true}
+                        sizes="(max-width: 768px) 150px, (max-width: 1024px) 200px, 250px"
                         className="object-contain rounded-lg"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
@@ -491,7 +517,7 @@ export default function AdminGallery() {
                         variant="outline"
                         size="sm"
                         className={`${cardClasses.button} text-red-600 hover:text-red-700`}
-                        onClick={() => deleteSticker(sticker.id)}
+                        onClick={() => handleDeleteClick(sticker.id)}
                       >
                         <Trash2 className="h-3 w-3" />
                         {stickerSize === "large" && (
@@ -590,6 +616,32 @@ export default function AdminGallery() {
                   Delete All Forever
                 </AlertDialogAction>
               )}
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Single Sticker Delete Dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Sticker</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this sticker? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => {
+                setShowDeleteDialog(false);
+                setStickerToDelete(null);
+              }}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={deleteSticker}
+                className="bg-red-500 hover:bg-red-600"
+              >
+                Delete Sticker
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

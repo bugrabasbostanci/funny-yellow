@@ -81,6 +81,7 @@ function SortableSticker({ sticker, onRemove }: SortableStickerProps) {
           alt={sticker.name}
           width={48}
           height={48}
+          priority={true}
           className="object-contain"
         />
       </div>
@@ -387,7 +388,8 @@ export default function EditPackPage() {
                       alt="Pack thumbnail preview"
                       width={64}
                       height={64}
-                      className="object-contain w-full h-full"
+                      priority={true}
+                      className="object-contain w-auto h-auto"
                       onError={() => setPackThumbnail("")}
                     />
                   </div>
@@ -401,7 +403,7 @@ export default function EditPackPage() {
                   <div className="grid grid-cols-4 gap-2 mt-2">
                     {packStickers.slice(0, 8).map((sticker) => (
                       <button
-                        key={sticker.id}
+                        key={`thumbnail-${sticker.id}`}
                         type="button"
                         onClick={() => setPackThumbnail(sticker.thumbnail_url)}
                         className={`w-12 h-12 bg-gray-100 rounded-lg overflow-hidden border-2 transition-colors ${
@@ -415,7 +417,8 @@ export default function EditPackPage() {
                           alt={sticker.name}
                           width={48}
                           height={48}
-                          className="object-contain w-full h-full"
+                          priority={true}
+                          className="object-contain w-auto h-auto"
                         />
                       </button>
                     ))}
@@ -450,7 +453,7 @@ export default function EditPackPage() {
                   <div className="space-y-2 max-h-96 overflow-y-auto">
                     {packStickers.map((sticker) => (
                       <SortableSticker
-                        key={sticker.id}
+                        key={`pack-${sticker.id}`}
                         sticker={sticker}
                         onRemove={handleRemoveSticker}
                       />
@@ -511,7 +514,7 @@ export default function EditPackPage() {
                     const isAlreadyInPack = packStickers.some(ps => ps.id === sticker.id);
                     return (
                     <div
-                      key={sticker.id}
+                      key={`available-${sticker.id}`}
                       className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
                         isAlreadyInPack 
                           ? "bg-gray-200 opacity-50" 
@@ -524,6 +527,7 @@ export default function EditPackPage() {
                           alt={sticker.name}
                           width={48}
                           height={48}
+                          priority={true}
                           className="object-contain"
                         />
                       </div>
@@ -531,8 +535,8 @@ export default function EditPackPage() {
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{sticker.name}</p>
                         <div className="flex gap-1 mt-1">
-                          {sticker.tags?.slice(0, 3).map((tag) => (
-                            <Badge key={tag} variant="outline" className="text-xs">
+                          {sticker.tags?.slice(0, 3).map((tag, tagIndex) => (
+                            <Badge key={`${sticker.id}-tag-${tagIndex}-${tag}`} variant="outline" className="text-xs">
                               {tag}
                             </Badge>
                           ))}

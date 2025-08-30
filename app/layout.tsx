@@ -3,8 +3,7 @@ import type { Metadata } from "next";
 import { Inter, Fredoka } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
-import { ClarityProvider } from "@/components/clarity-provider";
-import { WebVitals } from "@/components/web-vitals";
+import { ClientProviders } from "@/components/client-providers";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -90,10 +89,10 @@ export default function RootLayout({
       className={`${inter.variable} ${fredoka.variable} antialiased`}
     >
       <body className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-50">
-        <ClarityProvider />
-        <WebVitals />
-        {children}
-        <Toaster />
+        <ClientProviders>
+          {children}
+          <Toaster />
+        </ClientProviders>
       </body>
     </html>
   );

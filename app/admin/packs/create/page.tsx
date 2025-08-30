@@ -152,7 +152,8 @@ export default function CreatePackPage() {
                         alt="Pack thumbnail preview"
                         width={64}
                         height={64}
-                        className="object-contain w-full h-full"
+                        priority={true}
+                        className="object-contain w-auto h-auto"
                         onError={() => {
                           toast.error("Thumbnail yüklenemedi", {
                             description: "Geçerli bir resim URL'si girin"

@@ -2,11 +2,22 @@
 
 export const runtime = 'edge';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { 
   Package, 
   Edit, 
@@ -33,6 +44,7 @@ export default function AdminPacksPage() {
   const [packs, setPacks] = useState<PackWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [packToDelete, setPackToDelete] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     loadPacks();
@@ -63,24 +75,30 @@ export default function AdminPacksPage() {
     }
   };
 
-  const handleDeletePack = async (packId: string, packName: string) => {
-    if (!confirm(`${packName} pack&apos;ini silmek istediğinizden emin misiniz?`)) {
-      return;
-    }
+  const handleDeletePack = useCallback(async () => {
+    if (!packToDelete) return;
 
     try {
-      await DatabaseService.deletePack(packId);
-      setPacks(packs.filter(pack => pack.id !== packId));
+      await DatabaseService.deletePack(packToDelete.id);
+      setPacks(prev => prev.filter(pack => pack.id !== packToDelete.id));
       toast.success("Pack başarıyla silindi", {
-        description: `${packName} pack has been removed from your system`
+        description: `${packToDelete.name} pack has been removed from your system`
       });
+      setPackToDelete(null);
     } catch (error) {
       console.error("Error deleting pack:", error);
       toast.error("Error deleting pack", {
         description: "Please try again or contact the system administrator"
       });
     }
-  };
+  }, [packToDelete]);
+
+  // packToDelete değiştiğinde silme işlemini gerçekleştir
+  useEffect(() => {
+    if (packToDelete) {
+      handleDeletePack();
+    }
+  }, [packToDelete, handleDeletePack]);
 
   const filteredPacks = packs.filter(pack =>
     pack.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -211,6 +229,7 @@ export default function AdminPacksPage() {
                         alt={pack.name}
                         width={100}
                         height={100}
+                        priority={true}
                         className="object-contain"
                         onError={(e) => {
                           // If thumbnail fails to load, hide the image
@@ -242,14 +261,35 @@ export default function AdminPacksPage() {
                         Düzenle
                       </Button>
                     </Link>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeletePack(pack.id, pack.name)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Pack&apos;i Sil</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            <strong>{pack.name}</strong> pack&apos;ini silmek istediğinizden emin misiniz? 
+                            Bu işlem geri alınamaz ve pack içindeki tüm sticker&apos;lar da silinecektir.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>İptal</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => setPackToDelete({ id: pack.id, name: pack.name })}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Sil
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </CardContent>
               </Card>

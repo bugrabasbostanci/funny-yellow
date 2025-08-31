@@ -6,7 +6,13 @@ import { StickerFilters } from "./sticker-filters";
 import { StickerControls } from "./sticker-controls";
 import { StickerGrid } from "./sticker-grid";
 import { StickerPagination } from "./sticker-pagination";
-import { DownloadOptionsModal } from "./download-options-modal";
+import dynamic from "next/dynamic";
+
+// Lazy load heavy modal component
+const DownloadOptionsModal = dynamic(() => import("./download-options-modal").then(mod => ({ default: mod.DownloadOptionsModal })), {
+  loading: () => <div className="animate-pulse">Loading download options...</div>,
+  ssr: false
+});
 import { ScrollToTopButton } from "./scroll-to-top-button";
 import { ErrorBoundary } from "./error-boundary";
 import { DatabaseService } from "@/lib/database-service";

@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Github } from "lucide-react";
-import { AdminAuthModal } from "@/components/admin-auth-modal";
+import dynamic from "next/dynamic";
+
+// Lazy load AdminAuthModal - only used occasionally
+const AdminAuthModal = dynamic(() => import("@/components/admin-auth-modal").then(mod => ({ default: mod.AdminAuthModal })), {
+  loading: () => <div className="animate-spin w-4 h-4 border-2 border-muted border-t-primary rounded-full"></div>,
+  ssr: false
+});
 import { useAdminAuth } from "@/lib/admin-auth-context";
 
 // Client Component - handles interactive header elements

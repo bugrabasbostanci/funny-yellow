@@ -36,6 +36,9 @@ interface StickerFile {
   file: File;
   name: string;
   tags: string[];
+  optimizedFile?: File; // Client-side optimized version
+  originalSize?: number;
+  optimizedSize?: number;
 }
 
 interface ProcessingStep {
@@ -53,6 +56,115 @@ interface ProcessingResult {
   stickerId?: string;
   webpUrl?: string;
   pngUrl?: string;
+}
+
+// Client-side image optimization using Canvas API
+const OPTIMIZATION_SETTINGS = {
+  targetSize: 512,
+  maxFileSizeKB: 200,
+  qualityLevels: [0.95, 0.9, 0.85, 0.8, 0.75],
+  outputFormat: 'webp' as const
+};
+
+// Optimize image to 512x512 WebP format
+async function optimizeImageFile(file: File): Promise<{
+  optimizedFile: File;
+  originalSize: number;
+  optimizedSize: number;
+}> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = async () => {
+      try {
+        console.log(`🔄 Client-side optimizing: ${file.name}`);
+        console.log(`   📐 Original: ${img.width}x${img.height}`);
+        
+        // Create canvas
+        const canvas = document.createElement('canvas');
+        canvas.width = OPTIMIZATION_SETTINGS.targetSize;
+        canvas.height = OPTIMIZATION_SETTINGS.targetSize;
+        const ctx = canvas.getContext('2d')!;
+        
+        // Clear canvas with transparent background
+        ctx.clearRect(0, 0, OPTIMIZATION_SETTINGS.targetSize, OPTIMIZATION_SETTINGS.targetSize);
+        
+        // Calculate dimensions maintaining aspect ratio
+        const aspectRatio = img.width / img.height;
+        let drawX = 0;
+        let drawY = 0;
+        let drawWidth = OPTIMIZATION_SETTINGS.targetSize;
+        let drawHeight = OPTIMIZATION_SETTINGS.targetSize;
+        
+        if (Math.abs(aspectRatio - 1) < 0.1) {
+          // Nearly square - direct resize
+          console.log(`   ↗️  Strategy: Direct resize (square-ish: ${aspectRatio.toFixed(2)})`);
+        } else {
+          // Not square - fit with padding to maintain aspect ratio
+          console.log(`   📦 Strategy: Fit with padding (aspect: ${aspectRatio.toFixed(2)})`);
+          
+          if (aspectRatio > 1) {
+            // Wider than tall
+            drawHeight = Math.floor(OPTIMIZATION_SETTINGS.targetSize / aspectRatio);
+            drawY = Math.floor((OPTIMIZATION_SETTINGS.targetSize - drawHeight) / 2);
+          } else {
+            // Taller than wide
+            drawWidth = Math.floor(OPTIMIZATION_SETTINGS.targetSize * aspectRatio);
+            drawX = Math.floor((OPTIMIZATION_SETTINGS.targetSize - drawWidth) / 2);
+          }
+        }
+        
+        // Draw the image onto canvas
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+        
+        // Try different quality levels to achieve target file size
+        for (const quality of OPTIMIZATION_SETTINGS.qualityLevels) {
+          try {
+            const blob = await new Promise<Blob>((resolve) => {
+              canvas.toBlob((blob) => {
+                if (blob) resolve(blob);
+              }, `image/${OPTIMIZATION_SETTINGS.outputFormat}`, quality);
+            });
+            
+            const fileSizeKB = Math.round(blob.size / 1024);
+            
+            if (fileSizeKB <= OPTIMIZATION_SETTINGS.maxFileSizeKB || 
+                quality === OPTIMIZATION_SETTINGS.qualityLevels[OPTIMIZATION_SETTINGS.qualityLevels.length - 1]) {
+              
+              console.log(`   ✅ Success: ${OPTIMIZATION_SETTINGS.targetSize}x${OPTIMIZATION_SETTINGS.targetSize} ${OPTIMIZATION_SETTINGS.outputFormat.toUpperCase()}`);
+              console.log(`   📊 Quality: ${Math.round(quality * 100)}% | Size: ${fileSizeKB} KB`);
+              
+              // Create optimized File object
+              const optimizedFileName = file.name.replace(/\.[^/.]+$/, '') + '.webp';
+              const optimizedFile = new File([blob], optimizedFileName, {
+                type: `image/${OPTIMIZATION_SETTINGS.outputFormat}`,
+                lastModified: Date.now()
+              });
+              
+              resolve({
+                optimizedFile,
+                originalSize: file.size,
+                optimizedSize: blob.size
+              });
+              return;
+            } else {
+              console.log(`   🔄 Quality ${Math.round(quality * 100)}%: ${fileSizeKB} KB (too large, trying lower quality)`);
+            }
+          } catch (error) {
+            console.log(`   ❌ Failed at quality ${Math.round(quality * 100)}%: ${error}`);
+            continue;
+          }
+        }
+        
+        reject(new Error('Unable to optimize image within size constraints'));
+      } catch (error) {
+        console.error(`   ❌ Error optimizing ${file.name}:`, error);
+        reject(error);
+      }
+    };
+    
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = URL.createObjectURL(file);
+  });
 }
 
 export default function AdminUpload() {
@@ -228,17 +340,71 @@ export default function AdminUpload() {
     return [...new Set(tags)]; // Remove duplicates
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    const newStickerFiles: StickerFile[] = files.map((file) => ({
-      file,
-      name: file.name
-        .split(".")[0]
-        .replace(/[-_]/g, " ")
-        .replace(/\b\w/g, (char) => char.toUpperCase()),
-      tags: generateSmartTags(file.name),
-    }));
-    setSelectedFiles((prev) => [...prev, ...newStickerFiles]);
+    
+    // Show loading for optimization
+    setIsProcessing(true);
+    setProcessingProgress(10);
+    
+    try {
+      console.log(`🎯 Starting client-side optimization for ${files.length} files...`);
+      
+      const optimizedFiles: StickerFile[] = [];
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        console.log(`\n📸 Processing file ${i + 1}/${files.length}: ${file.name}`);
+        
+        try {
+          // Optimize the image
+          const { optimizedFile, originalSize, optimizedSize } = await optimizeImageFile(file);
+          
+          // Create StickerFile with optimization data
+          const stickerFile: StickerFile = {
+            file: optimizedFile, // Use optimized file
+            name: file.name
+              .split(".")[0]
+              .replace(/[-_]/g, " ")
+              .replace(/\b\w/g, (char) => char.toUpperCase()),
+            tags: generateSmartTags(file.name),
+            optimizedFile,
+            originalSize,
+            optimizedSize,
+          };
+          
+          optimizedFiles.push(stickerFile);
+          
+          // Update progress
+          setProcessingProgress(10 + (i + 1) * 80 / files.length);
+          
+        } catch (error) {
+          console.error(`❌ Failed to optimize ${file.name}:`, error);
+          toast.error(`Failed to optimize ${file.name}`, {
+            description: error instanceof Error ? error.message : 'Optimization failed'
+          });
+        }
+      }
+      
+      // Add optimized files to the list
+      setSelectedFiles((prev) => [...prev, ...optimizedFiles]);
+      setProcessingProgress(100);
+      
+      toast.success("Images optimized successfully!", {
+        description: `${optimizedFiles.length} files ready for upload`
+      });
+      
+    } catch (error) {
+      console.error('❌ Optimization error:', error);
+      toast.error("Optimization failed", {
+        description: error instanceof Error ? error.message : 'Unknown error'
+      });
+    } finally {
+      setTimeout(() => {
+        setIsProcessing(false);
+        setProcessingProgress(0);
+      }, 1000);
+    }
   };
 
   const updateSticker = (
@@ -290,9 +456,10 @@ export default function AdminUpload() {
       // Prepare FormData for batch processing
       const formData = new FormData();
 
-      // Add files
+      // Add optimized files (or original if optimization failed)
       selectedFiles.forEach((stickerFile) => {
-        formData.append("files", stickerFile.file);
+        const fileToUpload = stickerFile.optimizedFile || stickerFile.file;
+        formData.append("files", fileToUpload);
       });
 
       // Prepare metadata
@@ -443,8 +610,9 @@ export default function AdminUpload() {
                 <div className="flex items-center justify-between text-sm text-gray-600">
                   <div className="space-y-1">
                     <p>• Supports: JPG, PNG, WebP, SVG</p>
-                    <p>• Auto-optimizes to 512x512 WebP + PNG</p>
-                    <p>• Generates metadata automatically</p>
+                    <p>• Client-side optimizes to 512x512 WebP</p>
+                    <p>• Aspect ratio preserved with padding</p>
+                    <p>• Target size: 200KB max</p>
                   </div>
                   {selectedFiles.length > 0 && (
                     <Badge variant="secondary" className="ml-4">
@@ -611,10 +779,17 @@ export default function AdminUpload() {
                           <p className="font-medium text-sm">
                             {sticker.file.name}
                           </p>
-                          <p className="text-xs text-gray-500">
-                            {(sticker.file.size / 1024).toFixed(1)} KB •{" "}
-                            {sticker.file.type}
-                          </p>
+                          <div className="text-xs text-gray-500 space-y-1">
+                            <p>
+                              {(sticker.file.size / 1024).toFixed(1)} KB • {sticker.file.type}
+                            </p>
+                            {sticker.optimizedFile && sticker.originalSize && sticker.optimizedSize && (
+                              <p className="text-green-600">
+                                ✅ Optimized: {(sticker.originalSize / 1024).toFixed(1)} KB → {(sticker.optimizedSize / 1024).toFixed(1)} KB 
+                                ({Math.round(((sticker.originalSize - sticker.optimizedSize) / sticker.originalSize) * 100)}% smaller)
+                              </p>
+                            )}
+                          </div>
                         </div>
                         <Button
                           variant="ghost"

@@ -14,6 +14,8 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   }
 });
 
+// Server expects pre-optimized files from client-side processing
+
 function generateMetadata(fileName: string) {
   const name = fileName
     .replace(/\.(png|jpg|jpeg|webp|svg)$/i, '')
@@ -95,14 +97,22 @@ export async function POST(request: NextRequest) {
           slug: autoMetadata.slug
         };
 
-        // Upload to Supabase Storage
+        // File comes pre-optimized from client-side (512x512 WebP)
         const fileBuffer = await file.arrayBuffer();
-        const fileName = `${Date.now()}-${file.name}`;
         
+        // Generate filename (expecting WebP from client)
+        const timestamp = Date.now();
+        const baseFileName = file.name.replace(/\.[^/.]+$/, ''); // Remove extension
+        const fileName = `${timestamp}-${baseFileName}.webp`;
+        
+        console.log(`📤 Uploading pre-optimized file: ${file.name} → ${fileName}`);
+        console.log(`   📊 Size: ${Math.round(file.size / 1024)} KB | Type: ${file.type}`);
+        
+        // Upload to Supabase Storage
         const { error: uploadError } = await supabaseAdmin.storage
           .from('stickers')
           .upload(`webp/${fileName}`, fileBuffer, {
-            contentType: file.type,
+            contentType: file.type || 'image/webp',
             upsert: false
           });
 
@@ -143,10 +153,16 @@ export async function POST(request: NextRequest) {
           status: 'success' as const,
           stickerId: dbData.id,
           webpUrl: urlData.publicUrl,
-          pngUrl: urlData.publicUrl
+          pngUrl: urlData.publicUrl, // Same URL, pre-optimized WebP
+          optimization: {
+            dimensions: '512x512', // Client-side optimized
+            sizeKB: Math.round(file.size / 1024),
+            format: 'WebP',
+            processedOn: 'client-side'
+          }
         });
 
-        console.log(`✅ Successfully processed: ${file.name}`);
+        console.log(`✅ Successfully uploaded: ${file.name} (${Math.round(file.size / 1024)}KB)`);
 
       } catch (error) {
         console.error(`❌ Error processing ${file.name}:`, error);
@@ -185,13 +201,21 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   return NextResponse.json({
     endpoint: '/api/admin/process-sticker-batch',
-    status: 'Node.js Runtime - Fully functional',
-    message: 'Batch processing ready for file upload and metadata creation',
+    status: 'Edge Runtime - Client-side processing ready',
+    message: 'Batch upload for pre-optimized files from client-side Canvas processing',
     features: [
-      'Automatic image upload to Supabase Storage',
+      'Handles pre-optimized 512x512 WebP files from client',
+      'Edge Runtime compatible (Cloudflare Pages)',
+      'Fast upload without server-side image processing',
+      'Automatic upload to Supabase Storage',
       'Smart metadata generation from filenames',
       'Batch database insertion',
       'Custom tag support from admin interface'
-    ]
+    ],
+    processing: {
+      location: 'client-side',
+      expectedFormat: '512x512 WebP',
+      serverRole: 'Upload and store pre-processed files'
+    }
   });
 }

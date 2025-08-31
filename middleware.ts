@@ -12,8 +12,6 @@ export async function middleware(request: NextRequest) {
   const isAdminApiRoute = pathname.startsWith('/api/admin') && !isAuthEndpoint;
   
   if (isAdminApiRoute || isAdminPage) {
-    console.log(`🔍 Middleware checking: ${pathname}`);
-    
     let token: string | null = null;
     
     // API routes için Authorization header'dan token al
@@ -38,17 +36,12 @@ export async function middleware(request: NextRequest) {
       
       // For admin pages without cookie token, redirect to admin root for auth check
       if (!token) {
-        console.log('❌ No token found for admin page, redirecting to auth');
         const url = new URL('/admin', request.url);
         return NextResponse.redirect(url);
       }
     }
-    
-    console.log(`📝 Auth header: ${isAdminApiRoute ? (request.headers.get('authorization') ? 'Present' : 'Missing') : 'N/A'}`);
-    console.log(`🎫 Token: ${token ? 'Present' : 'Missing'}`);
 
     if (!token) {
-      console.log('❌ No token provided');
       if (isAdminApiRoute) {
         return NextResponse.json(
           { error: 'Unauthorized - No token provided', path: pathname },
@@ -62,10 +55,8 @@ export async function middleware(request: NextRequest) {
     }
 
     const isValid = await isValidAdminToken(token);
-    console.log(`✅ Token valid: ${isValid}`);
 
     if (!isValid) {
-      console.log('❌ Invalid token');
       if (isAdminApiRoute) {
         return NextResponse.json(
           { error: 'Unauthorized - Invalid token', path: pathname },
@@ -78,8 +69,6 @@ export async function middleware(request: NextRequest) {
         return response;
       }
     }
-    
-    console.log('✅ Auth successful for:', pathname);
   }
 
   return NextResponse.next();

@@ -22,7 +22,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     const authTime = localStorage.getItem("admin_auth_time");
     
     if (storedToken && authTime) {
-      // Token hala geçerlimi kontrol et (24 saat)
+      // Check if token is still valid (24 hours)
       const now = Date.now();
       const authTimestamp = parseInt(authTime);
       const twentyFourHours = 24 * 60 * 60 * 1000;
@@ -30,10 +30,10 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       if (now - authTimestamp < twentyFourHours) {
         setToken(storedToken);
         setIsAuthenticated(true);
-        // Eski format için backward compatibility
+        // Backward compatibility for old format
         localStorage.setItem("admin_authenticated", "true");
       } else {
-        // Token expired, temizle
+        // Token expired, clear it
         clearAuth();
       }
     }

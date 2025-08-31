@@ -82,7 +82,7 @@ export default function AdminPacksPage() {
     try {
       await DatabaseService.deletePack(packToDelete.id);
       setPacks(prev => prev.filter(pack => pack.id !== packToDelete.id));
-      toast.success("Pack başarıyla silindi", {
+      toast.success("Pack deleted successfully", {
         description: `${packToDelete.name} pack has been removed from your system`
       });
       setPackToDelete(null);
@@ -94,7 +94,7 @@ export default function AdminPacksPage() {
     }
   }, [packToDelete]);
 
-  // packToDelete değiştiğinde silme işlemini gerçekleştir
+  // Perform deletion when packToDelete changes
   useEffect(() => {
     if (packToDelete) {
       handleDeletePack();
@@ -113,7 +113,7 @@ export default function AdminPacksPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Pack&apos;ler yükleniyor...</p>
+            <p className="text-gray-600">Loading packs...</p>
           </div>
         </div>
       </div>
@@ -133,10 +133,10 @@ export default function AdminPacksPage() {
           </Link>
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Pack Yönetimi
+              Pack Management
             </h1>
             <p className="text-gray-600">
-              Sticker pack&apos;lerini düzenle ve yönet
+              Edit and manage sticker packs
             </p>
           </div>
         </div>
@@ -148,7 +148,7 @@ export default function AdminPacksPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               type="text"
-              placeholder="Pack ara"
+              placeholder="Search packs"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 pr-10"
@@ -167,7 +167,7 @@ export default function AdminPacksPage() {
           <Link href="/admin/packs/create">
             <Button className="bg-yellow-600 hover:bg-yellow-700 text-white">
               <Plus className="w-4 h-4 mr-2" />
-              Yeni Pack Oluştur
+              Create New Pack
             </Button>
           </Link>
         </div>
@@ -179,7 +179,7 @@ export default function AdminPacksPage() {
               <div className="text-2xl font-bold text-yellow-600">
                 {packs.length}
               </div>
-              <p className="text-sm text-gray-600">Toplam Pack</p>
+              <p className="text-sm text-gray-600">Total Packs</p>
             </CardContent>
           </Card>
           <Card>
@@ -187,7 +187,7 @@ export default function AdminPacksPage() {
               <div className="text-2xl font-bold text-blue-600">
                 {packs.reduce((sum, pack) => sum + pack.stickerCount, 0)}
               </div>
-              <p className="text-sm text-gray-600">Toplam Sticker</p>
+              <p className="text-sm text-gray-600">Total Stickers</p>
             </CardContent>
           </Card>
           <Card>
@@ -195,7 +195,7 @@ export default function AdminPacksPage() {
               <div className="text-2xl font-bold text-green-600">
                 {packs.reduce((sum, pack) => sum + pack.totalDownloads, 0)}
               </div>
-              <p className="text-sm text-gray-600">Toplam İndirme</p>
+              <p className="text-sm text-gray-600">Total Downloads</p>
             </CardContent>
           </Card>
         </div>
@@ -247,11 +247,11 @@ export default function AdminPacksPage() {
 
                   {/* Pack Stats */}
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Sticker Sayısı:</span>
+                    <span className="text-gray-600">Sticker Count:</span>
                     <Badge variant="outline">{pack.stickerCount}</Badge>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Toplam İndirme:</span>
+                    <span className="text-gray-600">Total Downloads:</span>
                     <Badge variant="outline">{pack.totalDownloads}</Badge>
                   </div>
 
@@ -260,7 +260,7 @@ export default function AdminPacksPage() {
                     <Link href={`/admin/packs/edit/${pack.id}`} className="flex-1">
                       <Button variant="outline" size="sm" className="w-full">
                         <Edit className="w-4 h-4 mr-2" />
-                        Düzenle
+                        Edit
                       </Button>
                     </Link>
                     <AlertDialog>
@@ -275,19 +275,19 @@ export default function AdminPacksPage() {
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Pack&apos;i Sil</AlertDialogTitle>
+                          <AlertDialogTitle>Delete Pack</AlertDialogTitle>
                           <AlertDialogDescription>
-                            <strong>{pack.name}</strong> pack&apos;ini silmek istediğinizden emin misiniz? 
-                            Bu işlem geri alınamaz ve pack içindeki tüm sticker&apos;lar da silinecektir.
+                            Are you sure you want to delete the <strong>{pack.name}</strong> pack? 
+                            This action cannot be undone and all stickers in this pack will also be deleted.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>İptal</AlertDialogCancel>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => setPackToDelete({ id: pack.id, name: pack.name })}
                             className="bg-red-600 hover:bg-red-700"
                           >
-                            Sil
+                            Delete
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -301,23 +301,23 @@ export default function AdminPacksPage() {
           <div className="text-center py-12">
             <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              {searchQuery ? "Pack bulunamadı" : "Henüz pack yok"}
+              {searchQuery ? "No packs found" : "No packs yet"}
             </h3>
             <p className="text-gray-600 mb-4">
               {searchQuery 
                 ? "Try changing your search criteria"
-                : "İlk sticker pack&apos;inizi oluşturun"
+                : "Create your first sticker pack"
               }
             </p>
             {searchQuery ? (
               <Button onClick={() => setSearchQuery("")}>
-                Aramayı Temizle
+                Clear Search
               </Button>
             ) : (
               <Link href="/admin/packs/create">
                 <Button className="bg-yellow-600 hover:bg-yellow-700 text-white">
                   <Plus className="w-4 h-4 mr-2" />
-                  İlk Pack&apos;i Oluştur
+                  Create First Pack
                 </Button>
               </Link>
             )}

@@ -32,7 +32,7 @@ export default function CreatePackPage() {
   const handleCreatePack = async () => {
     if (!packName.trim()) {
       toast.error("Pack adı gerekli", {
-        description: "Lütfen pack için bir ad girin"
+        description: "Please enter a name for the pack"
       });
       return;
     }
@@ -47,8 +47,8 @@ export default function CreatePackPage() {
         thumbnail_url: packThumbnail || null
       });
 
-      toast.success("Pack başarıyla oluşturuldu!", {
-        description: "Şimdi pack'e sticker ekleyebilirsiniz"
+      toast.success("Pack created successfully!", {
+        description: "You can now add stickers to the pack"
       });
       
       // Redirect to edit page to add stickers
@@ -76,10 +76,10 @@ export default function CreatePackPage() {
             </Link>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                Yeni Pack Oluştur
+                Create New Pack
               </h1>
               <p className="text-gray-600">
-                Yeni bir sticker pack&apos;i oluşturun
+                Create a new sticker pack
               </p>
             </div>
           </div>
@@ -90,7 +90,7 @@ export default function CreatePackPage() {
             className="bg-yellow-600 hover:bg-yellow-700 text-white"
           >
             <Save className="w-4 h-4 mr-2" />
-            {saving ? "Oluşturuluyor..." : "Pack Oluştur"}
+            {saving ? "Creating..." : "Create Pack"}
           </Button>
         </div>
 
@@ -116,22 +116,22 @@ export default function CreatePackPage() {
               </div>
               
               <div>
-                <Label htmlFor="pack-description">Açıklama</Label>
+                <Label htmlFor="pack-description">Description</Label>
                 <Input
                   id="pack-description"
                   value={packDescription}
                   onChange={(e) => setPackDescription(e.target.value)}
-                  placeholder="Pack hakkında kısa açıklama (isteğe bağlı)"
+                  placeholder="Short description about the pack (optional)"
                 />
               </div>
               
               <div>
-                <Label htmlFor="pack-character">Karakter</Label>
+                <Label htmlFor="pack-character">Character</Label>
                 <Input
                   id="pack-character"
                   value={packCharacter}
                   onChange={(e) => setPackCharacter(e.target.value)}
-                  placeholder="Ana karakter adı (örn: Kermit, Pepe)"
+                  placeholder="Main character name (e.g., Kermit, Pepe)"
                 />
               </div>
 
@@ -155,8 +155,8 @@ export default function CreatePackPage() {
                         priority={true}
                         className="object-contain w-auto h-auto"
                         onError={() => {
-                          toast.error("Thumbnail yüklenemedi", {
-                            description: "Geçerli bir resim URL'si girin"
+                          toast.error("Thumbnail could not be loaded", {
+                            description: "Please enter a valid image URL"
                           });
                           setPackThumbnail("");
                         }}
@@ -169,8 +169,8 @@ export default function CreatePackPage() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h4 className="font-medium text-blue-900 mb-2">📝 Not</h4>
                 <p className="text-sm text-blue-700">
-                  Pack oluşturduktan sonra düzenleme sayfasında sticker&apos;ları ekleyebilirsiniz.
-                  Thumbnail olarak pack&apos;teki sticker&apos;lardan birini seçmeniz önerilir.
+                  You can add stickers on the edit page after creating the pack.
+                  It is recommended to select one of the stickers in the pack as the thumbnail.
                 </p>
               </div>
             </CardContent>

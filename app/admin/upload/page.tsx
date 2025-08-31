@@ -274,8 +274,8 @@ export default function AdminUpload() {
 
   const handleBatchProcess = async () => {
     if (selectedFiles.length === 0) {
-      toast.warning("Dosya seçin", {
-        description: "Lütfen en az bir dosya seçin",
+      toast.warning("Select files", {
+        description: "Please select at least one file",
       });
       return;
     }
@@ -346,8 +346,8 @@ export default function AdminUpload() {
 
       // Show success message
       const { summary } = result;
-      toast.success("Batch işlemi tamamlandı!", {
-        description: `Başarılı: ${summary.successful}, Başarısız: ${summary.failed}, Toplam: ${summary.total}`,
+      toast.success("Batch operation completed!", {
+        description: `Successful: ${summary.successful}, Failed: ${summary.failed}, Total: ${summary.total}`,
       });
 
       // Clear form on success

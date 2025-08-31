@@ -7,7 +7,7 @@ export function ClarityProvider() {
   const pathname = usePathname();
   
   useEffect(() => {
-    // Admin sayfalarında Clarity'yi devre dışı bırak
+    // Disable Clarity on admin pages
     if (pathname.startsWith('/admin')) {
       if (process.env.NODE_ENV === 'development') {
         console.log('🚫 Clarity disabled for admin pages');

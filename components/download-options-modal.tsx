@@ -70,10 +70,6 @@ export function DownloadOptionsModal({
 
       // Track downloads for all stickers efficiently in one batch
       try {
-        console.log(
-          `🔄 Tracking bulk download for ${stickers.length} stickers`
-        );
-
         await DatabaseService.trackBulkDownload(
           stickers.map((s) => s.id),
           "0.0.0.0", // IP address - could be improved with actual client IP
@@ -82,14 +78,9 @@ export function DownloadOptionsModal({
 
         // Notify parent component that bulk download completed
         onBulkDownloadComplete?.(stickers.map((s) => s.id));
-
-        console.log(
-          `✅ Bulk download tracking completed for ${stickers.length} stickers`
-        );
       } catch (trackingError) {
         console.error("❌ Error tracking bulk download:", trackingError);
         // Fallback to individual tracking if bulk fails
-        console.log("🔄 Falling back to individual download tracking...");
         if (onDownload) {
           stickers.forEach((sticker) => {
             onDownload(sticker.id);

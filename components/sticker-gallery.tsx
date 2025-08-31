@@ -53,7 +53,6 @@ export function StickerGallery() {
         setLoading(true);
         setError(null);
 
-        console.log("🔄 Loading initial data with server-side pagination...");
 
         // Fetch first page of stickers and popular tags
         const [paginatedData, tagsData] = await Promise.all([
@@ -66,12 +65,6 @@ export function StickerGallery() {
           DatabaseService.getPopularTags(),
         ]);
 
-        console.log(
-          "✅ Initial server-side fetch successful:",
-          `${paginatedData.stickers.length} stickers,`,
-          `total: ${paginatedData.totalCount},`,
-          `hasMore: ${paginatedData.hasMore}`
-        );
 
         setDisplayedStickers(paginatedData.stickers);
         setHasMore(paginatedData.hasMore);
@@ -107,7 +100,6 @@ export function StickerGallery() {
       
       try {
         setLoadingMore(true);
-        console.log("🔄 Filters changed, reloading data from server...");
 
         const paginatedData = await DatabaseService.getStickersPaginated({
           limit: itemsPerPage,
@@ -116,11 +108,6 @@ export function StickerGallery() {
           tag: selectedTag !== "all" ? selectedTag : undefined,
         });
 
-        console.log(
-          "✅ Filter reload successful:",
-          `${paginatedData.stickers.length} stickers,`,
-          `total: ${paginatedData.totalCount}`
-        );
 
         setDisplayedStickers(paginatedData.stickers);
         setHasMore(paginatedData.hasMore);
@@ -140,13 +127,11 @@ export function StickerGallery() {
   // Load more stickers from server (true infinite scroll)
   const loadMoreStickers = useCallback(async () => {
     if (loadingMore || !hasMore) {
-      console.log("⚠️ Load more skipped:", { loadingMore, hasMore });
       return;
     }
 
     try {
       setLoadingMore(true);
-      console.log("🔄 Loading more stickers from server:", { currentOffset, itemsPerPage });
 
       const paginatedData = await DatabaseService.getStickersPaginated({
         limit: itemsPerPage,
@@ -155,11 +140,6 @@ export function StickerGallery() {
         tag: selectedTag !== "all" ? selectedTag : undefined,
       });
 
-      console.log(
-        "✅ Load more successful:",
-        `${paginatedData.stickers.length} new stickers,`,
-        `hasMore: ${paginatedData.hasMore}`
-      );
 
       setDisplayedStickers((prev) => {
         // Prevent duplicates by checking existing IDs
@@ -184,19 +164,13 @@ export function StickerGallery() {
   // No need for client-side reset - server handles filtering
 
   const handleDownload = async (stickerId: string) => {
-    console.log("🔽 Download started for sticker:", stickerId);
-
     try {
-      console.log("📊 Tracking individual download in database...");
-
       // Track download in database first
       await DatabaseService.trackDownload(
         stickerId,
         "0.0.0.0",
         navigator.userAgent
       );
-
-      console.log("✅ Individual download tracked successfully in database");
 
       // Refresh the specific sticker's data from database
       await refreshStickerData(stickerId);
@@ -228,9 +202,6 @@ export function StickerGallery() {
         )
       );
       
-      console.log(
-        `🔄 Updated UI: sticker ${stickerId} now shows download_count: ${updatedSticker.download_count}`
-      );
     } catch (refreshError) {
       console.error("⚠️ Could not refresh sticker data:", refreshError);
     }
@@ -238,9 +209,6 @@ export function StickerGallery() {
 
   // Handle bulk download completion
   const handleBulkDownloadComplete = async (stickerIds: string[]) => {
-    console.log(
-      `🔄 Refreshing UI for ${stickerIds.length} stickers after bulk download`
-    );
 
     try {
       // Refresh data for all affected stickers in parallel
@@ -282,9 +250,6 @@ export function StickerGallery() {
           })
         );
 
-        console.log(
-          `✅ Bulk UI update completed for ${successfulRefreshes.length}/${stickerIds.length} stickers`
-        );
       }
     } catch (error) {
       console.error("❌ Error during bulk UI refresh:", error);

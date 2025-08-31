@@ -21,7 +21,6 @@ export class DatabaseService {
     limit?: number;
     offset?: number;
   }) {
-    console.log("🔄 Fetching stickers from database...");
     
     let query = supabase
       .from("stickers")
@@ -52,9 +51,6 @@ export class DatabaseService {
       throw new Error("Failed to fetch stickers");
     }
 
-    console.log(`📊 Fetched ${data?.length || 0} stickers. Sample download counts:`, 
-      data?.slice(0, 3).map(s => ({ id: s.id.slice(0, 8), name: s.name, download_count: s.download_count }))
-    );
 
     return data || [];
   }
@@ -66,7 +62,6 @@ export class DatabaseService {
     search?: string;
     tag?: string;
   }) {
-    console.log(`🔄 Fetching paginated stickers: offset=${options.offset}, limit=${options.limit}`);
     
     let query = supabase
       .from("stickers")

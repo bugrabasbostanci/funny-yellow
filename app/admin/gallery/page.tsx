@@ -108,8 +108,8 @@ export default function AdminGallery() {
         setFilteredStickers(data.stickers || []);
       } catch (error) {
         console.error("Error loading stickers:", error);
-        toast.error("Sticker'lar yüklenirken hata oluştu", {
-          description: "Lütfen sayfayı yenileyin",
+        toast.error("Error loading stickers", {
+          description: "Please refresh the page",
         });
         setStickers([]);
         setFilteredStickers([]);
@@ -167,7 +167,7 @@ export default function AdminGallery() {
 
       // Remove from local state
       setStickers((prev) => prev.filter((s) => s.id !== stickerToDelete));
-      toast.success("Sticker başarıyla silindi", {
+      toast.success("Sticker deleted successfully", {
         description: "Sticker sisteminizden kaldırıldı",
       });
       
@@ -176,9 +176,9 @@ export default function AdminGallery() {
       setStickerToDelete(null);
     } catch (error) {
       console.error("Delete error:", error);
-      toast.error("Sticker silinemedi", {
+      toast.error("Could not delete sticker", {
         description:
-          error instanceof Error ? error.message : "Bilinmeyen hata oluştu",
+          error instanceof Error ? error.message : "Unknown error occurred",
       });
     }
   };
@@ -218,14 +218,14 @@ export default function AdminGallery() {
       setDeleteAllStep(1);
       setConfirmationText("");
 
-      toast.success("Tüm sticker'lar silindi", {
-        description: `${result.deletedCount} sticker başarıyla silindi`,
+      toast.success("All stickers deleted", {
+        description: `${result.deletedCount} stickers successfully deleted`,
       });
     } catch (error) {
       console.error("Delete all error:", error);
-      toast.error("Sticker'lar silinemedi", {
+      toast.error("Could not delete stickers", {
         description:
-          error instanceof Error ? error.message : "Bilinmeyen hata oluştu",
+          error instanceof Error ? error.message : "Unknown error occurred",
       });
     } finally {
       setLoading(false);

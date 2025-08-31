@@ -79,14 +79,10 @@ export function StickerCard({
     const DEBOUNCE_TIME = 1000; // 1 second debounce
 
     if (now - lastDownloadTimeRef.current < DEBOUNCE_TIME) {
-      console.log(
-        `⚠️ Download debounced for sticker ${id} - too soon after last click`
-      );
       return;
     }
 
     if (isDownloading) {
-      console.log(`⚠️ Download already in progress for sticker ${id}`);
       return;
     }
 
@@ -98,7 +94,6 @@ export function StickerCard({
     lastDownloadTimeRef.current = now;
     setIsDownloading(true);
 
-    console.log(`🔽 Starting debounced download for sticker ${id}`);
 
     try {
       const url = imageUrl || "/placeholder.svg";

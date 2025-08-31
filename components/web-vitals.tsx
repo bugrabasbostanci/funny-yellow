@@ -13,7 +13,7 @@ export function WebVitals() {
   useEffect(() => {
     if (typeof window === 'undefined') return
     
-    // Development'ta performans izlemeyi devre dışı bırak
+    // Disable performance monitoring in development
     if (process.env.NODE_ENV === 'development') {
       console.log('🚫 WebVitals disabled in development mode');
       return;

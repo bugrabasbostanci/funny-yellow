@@ -10,7 +10,8 @@
       "Bash(npm run lint:*)",
       "Bash(git push:*)",
       "Bash(taskkill:*)",
-      "Bash(cmd /c:*)"
+      "Bash(cmd /c:*)",
+      "mcp__context7__resolve-library-id"
     ],
     "deny": [],
     "ask": []

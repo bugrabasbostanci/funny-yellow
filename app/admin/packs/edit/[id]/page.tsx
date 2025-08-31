@@ -89,7 +89,7 @@ function SortableSticker({ sticker, onRemove }: SortableStickerProps) {
       <div className="flex-1 min-w-0">
         <p className="font-medium text-sm truncate">{sticker.name}</p>
         <p className="text-xs text-gray-500">
-          {sticker.download_count} indirme
+          {sticker.download_count} downloads
         </p>
       </div>
       
@@ -195,8 +195,8 @@ export default function EditPackPage() {
   const handleAddSticker = async (sticker: StickerData) => {
     // Check if sticker is already in pack (frontend check)
     if (packStickers.some(s => s.id === sticker.id)) {
-      toast.warning("Bu sticker zaten pack'te mevcut", {
-        description: "Bu sticker'ı daha önce pack'e eklemişsiniz"
+      toast.warning("This sticker is already in the pack", {
+        description: "You have already added this sticker to the pack"
       });
       return;
     }
@@ -209,8 +209,8 @@ export default function EditPackPage() {
       setAvailableStickers(availableStickers.filter(s => s.id !== sticker.id));
     } catch (error) {
       console.error("Error adding sticker to pack:", error);
-      const errorMessage = error instanceof Error ? error.message : "Sticker pack'e eklenirken hata oluştu";
-      toast.error("Sticker eklenemedi", {
+      const errorMessage = error instanceof Error ? error.message : "An error occurred while adding sticker to pack";
+      toast.error("Could not add sticker", {
         description: errorMessage
       });
     }
@@ -228,8 +228,8 @@ export default function EditPackPage() {
       }
     } catch (error) {
       console.error("Error removing sticker from pack:", error);
-      toast.error("Sticker çıkarılamadı", {
-        description: "Sticker pack'ten çıkarılırken hata oluştu"
+      toast.error("Could not remove sticker", {
+        description: "An error occurred while removing sticker from pack"
       });
     }
   };
@@ -280,7 +280,7 @@ export default function EditPackPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Pack yükleniyor...</p>
+            <p className="text-gray-600">Loading pack...</p>
           </div>
         </div>
       </div>
@@ -292,9 +292,9 @@ export default function EditPackPage() {
       <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-50 p-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Pack Bulunamadı</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Pack Not Found</h1>
             <Link href="/admin/packs">
-              <Button>Pack Listesine Dön</Button>
+              <Button>Back to Pack List</Button>
             </Link>
           </div>
         </div>
@@ -315,10 +315,10 @@ export default function EditPackPage() {
             </Link>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                {pack.name} Düzenle
+                Edit {pack.name}
               </h1>
               <p className="text-gray-600">
-                Sticker&apos;ları yönet ve pack bilgilerini güncelle
+                Manage stickers and update pack information
               </p>
             </div>
           </div>
@@ -329,7 +329,7 @@ export default function EditPackPage() {
             className="bg-yellow-600 hover:bg-yellow-700 text-white"
           >
             <Save className="w-4 h-4 mr-2" />
-            {saving ? "Kaydediliyor..." : "Kaydet"}
+            {saving ? "Saving..." : "Save"}
           </Button>
         </div>
 
@@ -339,37 +339,37 @@ export default function EditPackPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Package className="w-5 h-5" />
-                Pack Bilgileri
+                Pack Information
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="pack-name">Pack Adı</Label>
+                <Label htmlFor="pack-name">Pack Name</Label>
                 <Input
                   id="pack-name"
                   value={packName}
                   onChange={(e) => setPackName(e.target.value)}
-                  placeholder="Pack adını girin"
+                  placeholder="Enter pack name"
                 />
               </div>
               
               <div>
-                <Label htmlFor="pack-description">Açıklama</Label>
+                <Label htmlFor="pack-description">Description</Label>
                 <Input
                   id="pack-description"
                   value={packDescription}
                   onChange={(e) => setPackDescription(e.target.value)}
-                  placeholder="Pack açıklaması"
+                  placeholder="Pack description"
                 />
               </div>
               
               <div>
-                <Label htmlFor="pack-character">Karakter</Label>
+                <Label htmlFor="pack-character">Character</Label>
                 <Input
                   id="pack-character"
                   value={packCharacter}
                   onChange={(e) => setPackCharacter(e.target.value)}
-                  placeholder="Ana karakter (örn: Kermit)"
+                  placeholder="Main character (e.g., Kermit)"
                 />
               </div>
 
@@ -399,7 +399,7 @@ export default function EditPackPage() {
               {/* Thumbnail Suggestions */}
               {packStickers.length > 0 && (
                 <div>
-                  <Label className="text-sm text-gray-600">Thumbnail Önerileri</Label>
+                  <Label className="text-sm text-gray-600">Thumbnail Suggestions</Label>
                   <div className="grid grid-cols-4 gap-2 mt-2">
                     {packStickers.slice(0, 8).map((sticker) => (
                       <button
@@ -428,7 +428,7 @@ export default function EditPackPage() {
 
               <div className="pt-4 border-t">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Sticker Sayısı:</span>
+                  <span className="text-gray-600">Sticker Count:</span>
                   <Badge variant="outline">{packStickers.length}</Badge>
                 </div>
               </div>
@@ -438,7 +438,7 @@ export default function EditPackPage() {
           {/* Pack Stickers */}
           <Card>
             <CardHeader>
-              <CardTitle>Pack İçeriği ({packStickers.length})</CardTitle>
+              <CardTitle>Pack Contents ({packStickers.length})</CardTitle>
             </CardHeader>
             <CardContent>
               <DndContext
@@ -467,7 +467,7 @@ export default function EditPackPage() {
                       <GripVertical className="w-4 h-4 text-gray-400" />
                       <div className="w-12 h-12 bg-gray-100 rounded-lg" />
                       <div className="flex-1">
-                        <p className="font-medium text-sm">Taşınıyor...</p>
+                        <p className="font-medium text-sm">Moving...</p>
                       </div>
                     </div>
                   ) : null}
@@ -477,8 +477,8 @@ export default function EditPackPage() {
               {packStickers.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
                   <Package className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                  <p className="text-sm">Pack&apos;te henüz sticker yok</p>
-                  <p className="text-xs">Sağdaki listeden sticker ekleyin</p>
+                  <p className="text-sm">No stickers in pack yet</p>
+                  <p className="text-xs">Add stickers from the list on the right</p>
                 </div>
               )}
             </CardContent>
@@ -487,12 +487,12 @@ export default function EditPackPage() {
           {/* Available Stickers */}
           <Card>
             <CardHeader>
-              <CardTitle>Kullanılabilir Sticker&apos;lar</CardTitle>
+              <CardTitle>Available Stickers</CardTitle>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   type="text"
-                  placeholder="Sticker ara"
+                  placeholder="Search stickers"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 pr-10 h-8"
@@ -563,7 +563,7 @@ export default function EditPackPage() {
                   <div className="text-center py-8 text-gray-500">
                     <Search className="w-8 h-8 mx-auto mb-2 text-gray-300" />
                     <p className="text-sm">
-                      {searchQuery ? "Sticker bulunamadı" : "Tüm sticker&apos;lar pack&apos;lerde"}
+                      {searchQuery ? "No stickers found" : "All stickers are in packs"}
                     </p>
                   </div>
                 )}

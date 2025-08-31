@@ -106,7 +106,7 @@ export default function AdminPage() {
       <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-600 mx-auto mb-2"></div>
-          <p className="text-gray-600">Yetki kontrol ediliyor...</p>
+          <p className="text-gray-600">Checking authorization...</p>
         </div>
       </div>
     );
@@ -117,7 +117,7 @@ export default function AdminPage() {
       <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-600 mx-auto mb-2"></div>
-          <p className="text-gray-600">Çıkış yapılıyor...</p>
+          <p className="text-gray-600">Signing out...</p>
         </div>
       </div>
     );

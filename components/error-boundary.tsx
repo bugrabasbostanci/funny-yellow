@@ -28,7 +28,7 @@ const DefaultErrorFallback = ({
   <Alert variant="destructive" className="my-4">
     <AlertDescription className="space-y-4">
       <div>
-        <strong>Bu bileşen yüklenirken bir hata oluştu</strong>
+        <strong>An error occurred while loading this component</strong>
         {process.env.NODE_ENV === 'development' && error && (
           <p className="text-xs mt-2 text-muted-foreground">
             {error.message}

@@ -10,7 +10,7 @@ export default function Loading() {
             <div className="w-2 h-2 bg-yellow-600/60 rounded-full animate-pulse delay-200"></div>
           </div>
         </div>
-        <p className="text-gray-600 mt-4">Admin panel yükleniyor...</p>
+        <p className="text-gray-600 mt-4">Loading admin panel...</p>
       </div>
     </div>
   );

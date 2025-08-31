@@ -42,7 +42,7 @@ export function AdminRouteGuard({ children }: AdminRouteGuardProps) {
               <div className="w-2 h-2 bg-yellow-600/60 rounded-full animate-pulse delay-200"></div>
             </div>
           </div>
-          <p className="text-gray-600 mt-4">Yetki kontrol ediliyor...</p>
+          <p className="text-gray-600 mt-4">Checking authorization...</p>
         </div>
       </div>
     );

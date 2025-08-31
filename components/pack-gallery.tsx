@@ -32,13 +32,6 @@ export function PackGallery() {
         ]);
         setStickers(stickersData);
         setPacks(packsData);
-        console.log("🔍 Loaded packs:", packsData.map(p => ({ id: p.id, name: p.name, previews: p.previewStickers })));
-        
-        // Pocoyo pack detayları
-        const pocoyoPack = packsData.find(p => p.name.includes('Pocoyo'));
-        if (pocoyoPack) {
-          console.log("🔍 Pocoyo pack details:", pocoyoPack);
-        }
         setUsingFallbackData(false);
       } catch (error) {
         console.error("Failed to load data for packs:", error);
@@ -220,12 +213,6 @@ export function PackGallery() {
                   )
                 );
                 
-                console.log(`🔍 Pack "${pack.name}" stickers:`, {
-                  packId: pack.id,
-                  expectedStickerIds: pack.stickerIds,
-                  foundStickers: packStickers.map(s => ({ id: s.id, name: s.name, slug: s.slug })),
-                  allStickers: stickers.slice(0, 3).map(s => ({ id: s.id, name: s.name, slug: s.slug }))
-                });
                 
                 const stickerForDownload: StickerForDownload[] = packStickers.map(
                   (sticker) => ({

@@ -30,10 +30,7 @@ export function StickerControls({
       <p className="text-xs sm:text-sm text-muted-foreground">
         {selectionMode ? (
           <span className="flex items-center gap-2 flex-wrap">
-            <Badge
-              variant="secondary"
-              className="bg-primary/10 text-primary"
-            >
+            <Badge variant="secondary" className="bg-primary/10 text-primary">
               {selectedStickers.size} of {displayedStickers.length} selected
             </Badge>
             {selectedTag !== "all" && (
@@ -53,8 +50,7 @@ export function StickerControls({
             {selectedTag !== "all" && (
               <span className="hidden sm:inline">
                 {" "}
-                tagged with{" "}
-                <span className="font-medium">#{selectedTag}</span>
+                tagged with <span className="font-bold">{selectedTag}</span>
               </span>
             )}
           </>

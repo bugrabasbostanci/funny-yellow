@@ -1,6 +1,6 @@
-import { Header } from "@/components/header";
+import { HeaderServer } from "@/components/header-server";
 import { HeroSection } from "@/components/hero-section";
-import { StickerGallery } from "@/components/sticker-gallery";
+import { StickerGalleryServer } from "@/components/sticker-gallery-server";
 import { Footer } from "@/components/footer";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { AdminAuthProvider } from "@/lib/admin-auth-context";
@@ -30,14 +30,14 @@ export default function HomePage() {
       />
       <div className="min-h-screen flex flex-col">
         <ErrorBoundary>
-          <Header />
+          <HeaderServer />
         </ErrorBoundary>
         <main className="flex-1">
           <ErrorBoundary>
             <HeroSection />
           </ErrorBoundary>
           <ErrorBoundary>
-            <StickerGallery />
+            <StickerGalleryServer />
           </ErrorBoundary>
         </main>
         <ErrorBoundary>

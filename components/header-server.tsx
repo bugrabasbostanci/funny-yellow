@@ -15,7 +15,8 @@ export function HeaderServer() {
               width={64}
               height={64}
               className="w-16 h-16 transition-transform duration-200 hover:scale-110"
-              priority
+              priority={true}
+              loading="eager"
             />
             <div className="flex flex-col">
               <h1 className="text-xl font-bold text-primary font-display tracking-tight">

@@ -41,12 +41,27 @@ export function StickerGrid({
     }
   };
 
+  // Calculate above-fold items based on screen size and stickerSize
+  const getAboveFoldCount = () => {
+    switch (stickerSize) {
+      case "small":
+        return 16; // 2 rows on mobile (6), 2 rows on desktop (10-16)
+      case "medium":
+        return 12; // 2 rows on mobile (4), 2 rows on desktop (8-12)
+      case "large":
+        return 8;  // 2 rows on mobile (2), 2 rows on desktop (6-8)
+      default:
+        return 12; // Default to medium
+    }
+  };
+
   const gridClasses = getGridClasses();
+  const aboveFoldCount = getAboveFoldCount();
 
   if (displayedStickers.length > 0) {
     return (
       <div className={`grid gap-4 ${gridClasses}`}>
-        {displayedStickers.map((sticker) => (
+        {displayedStickers.map((sticker, index) => (
           <StickerCard
             key={sticker.id}
             id={sticker.id}
@@ -59,6 +74,8 @@ export function StickerGrid({
             selectionMode={selectionMode}
             isSelected={selectedStickers.has(sticker.id)}
             onSelectionChange={onStickerSelection}
+            priority={index < aboveFoldCount}
+            isAboveFold={index < aboveFoldCount}
           />
         ))}
       </div>

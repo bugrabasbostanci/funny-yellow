@@ -43,23 +43,34 @@ AS $$
 $$;
 
 -- PART 3: Create indexes for search optimization
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_stickers_search_name ON stickers USING gin (to_tsvector ('english', name));
+-- NOTE: Run these ONE BY ONE in separate queries (not in transaction block)
+-- Copy-paste each CREATE INDEX command separately in Supabase SQL Editor
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_stickers_tags_gin ON stickers USING gin (tags);
+-- Index 1: Full-text search on sticker names
+CREATE INDEX IF NOT EXISTS idx_stickers_search_name ON stickers USING gin (to_tsvector('english', name));
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_stickers_created_at ON stickers (created_at DESC);
+-- Index 2: GIN index for tag array operations  
+CREATE INDEX IF NOT EXISTS idx_stickers_tags_gin ON stickers USING gin (tags);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_stickers_created_tags ON stickers (created_at DESC, tags);
+-- Index 3: Ordering by creation date (most common sort)
+CREATE INDEX IF NOT EXISTS idx_stickers_created_at ON stickers (created_at DESC);
 
--- PART 4: Create indexes for downloads
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_downloads_sticker_id ON downloads (sticker_id);
+-- Index 4: Composite index for filtered pagination
+CREATE INDEX IF NOT EXISTS idx_stickers_created_tags ON stickers (created_at DESC, tags);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_downloads_created_at ON downloads (downloaded_at DESC);
+-- PART 4: Create indexes for downloads (run these separately too)
+-- Index 5: Download tracking lookup
+CREATE INDEX IF NOT EXISTS idx_downloads_sticker_id ON downloads (sticker_id);
 
--- PART 5: Create indexes for pack optimization
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_pack_items_pack_id ON sticker_pack_items (pack_id, display_order);
+-- Index 6: Download date sorting
+CREATE INDEX IF NOT EXISTS idx_downloads_created_at ON downloads (downloaded_at DESC);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_pack_items_sticker_id ON sticker_pack_items (sticker_id);
+-- PART 5: Create indexes for pack optimization (run separately)
+-- Index 7: Pack items lookup with ordering
+CREATE INDEX IF NOT EXISTS idx_pack_items_pack_id ON sticker_pack_items (pack_id, display_order);
+
+-- Index 8: Reverse lookup from sticker to packs
+CREATE INDEX IF NOT EXISTS idx_pack_items_sticker_id ON sticker_pack_items (sticker_id);
 
 -- PART 6: Run ANALYZE for optimal query planning
 ANALYZE stickers;

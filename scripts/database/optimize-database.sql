@@ -80,12 +80,12 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS popular_tags_mv AS
   LIMIT 20;
 
 -- Refresh the materialized view periodically (set up a cron job)
--- SELECT cron.schedule('refresh-popular-tags', '*/10 * * * *', 'REFRESH MATERIALIZED VIEW popular_tags_mv;');
+-- SELECT cron.schedule(refresh-popular-tags, every-10-minutes, REFRESH MATERIALIZED VIEW popular_tags_mv);
 */
 
 -- 7. Query performance analysis (run these to check effectiveness)
--- Check query performance
--- EXPLAIN ANALYZE SELECT * FROM stickers WHERE tags @> ARRAY['funny'] ORDER BY created_at DESC LIMIT 24;
+-- Check query performance examples:
+-- EXPLAIN ANALYZE SELECT * FROM stickers WHERE tags @> ARRAY[funny] ORDER BY created_at DESC LIMIT 24;
 -- EXPLAIN ANALYZE SELECT unnest(tags) as tag, COUNT(*) FROM stickers GROUP BY unnest(tags) ORDER BY count DESC LIMIT 10;
 
 -- 8. Database maintenance recommendations
@@ -95,7 +95,7 @@ ANALYZE downloads;
 ANALYZE sticker_pack_items;
 
 -- Comments for monitoring
-COMMENT ON FUNCTION get_popular_tags(integer) IS 'Server-side tag aggregation for optimal performance - replaces client-side processing';
+COMMENT ON FUNCTION get_popular_tags(integer) IS 'Server-side tag aggregation for optimal performance replaces client-side processing';
 COMMENT ON FUNCTION get_sticker_stats() IS 'Efficient statistics calculation for admin dashboard';
 COMMENT ON INDEX idx_stickers_search_name IS 'Full-text search optimization for sticker names';
 COMMENT ON INDEX idx_stickers_tags_gin IS 'GIN index for fast tag filtering and contains operations';

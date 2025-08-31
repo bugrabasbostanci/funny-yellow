@@ -15,6 +15,39 @@ type PackItemData = Database["public"]["Tables"]["sticker_pack_items"]["Row"];
 const pendingDownloads = new Set<string>();
 
 export class DatabaseService {
+  // Cache management methods for performance optimization
+  static clearAllCaches() {
+    this.popularTagsCache = null;
+    this.totalCountCache = null;
+    this.stickerCache.clear();
+    console.log('🧹 All caches cleared');
+  }
+
+  static clearPopularTagsCache() {
+    this.popularTagsCache = null;
+    console.log('🧹 Popular tags cache cleared');
+  }
+
+  static clearStickerCache(stickerId?: string) {
+    if (stickerId) {
+      this.stickerCache.delete(stickerId);
+      console.log(`🧹 Cleared cache for sticker: ${stickerId}`);
+    } else {
+      this.stickerCache.clear();
+      console.log('🧹 All sticker cache cleared');
+    }
+  }
+
+  // Performance monitoring method
+  static getCacheStats() {
+    return {
+      popularTagsCached: !!this.popularTagsCache,
+      totalCountCached: !!this.totalCountCache,
+      stickersCached: this.stickerCache.size,
+      cacheHitRatio: this.stickerCache.size > 0 ? '~estimation based on cache size' : 'No data'
+    };
+  }
+
   // Fetch all stickers with optional filtering
   static async getStickers(options?: {
     search?: string;
@@ -55,17 +88,24 @@ export class DatabaseService {
     return data || [];
   }
 
+  // Cache for total count to avoid expensive count queries
+  private static totalCountCache: { count: number; timestamp: number; filter?: string } | null = null;
+  private static readonly COUNT_CACHE_TTL = 2 * 60 * 1000; // 2 minutes cache
+
   // Get stickers with pagination info (for infinite scroll)
   static async getStickersPaginated(options: {
     limit: number;
     offset: number;
     search?: string;
     tag?: string;
+    needsCount?: boolean; // Allow skipping count for performance
   }) {
+    // Create filter key for cache invalidation
+    const filterKey = `${options.search || ''}:${options.tag || 'all'}`;
     
     let query = supabase
       .from("stickers")
-      .select("*", { count: 'exact' })
+      .select("*")
       .order("created_at", { ascending: false });
 
     // Apply search filter
@@ -86,18 +126,66 @@ export class DatabaseService {
       options.offset + options.limit - 1
     );
 
-    const { data, error, count } = await query;
+    // Get data first (fast query)
+    const { data, error } = await query;
 
     if (error) {
       console.error("Error fetching paginated stickers:", error);
       throw new Error("Failed to fetch stickers");
     }
 
-    const totalCount = count || 0;
-    const hasMore = (options.offset + options.limit) < totalCount;
+    // Get or calculate total count efficiently
+    let totalCount = 0;
+    let hasMore = false;
+
+    // Check if we need total count and if we can use cache
+    if (options.needsCount !== false) {
+      const cacheValid = this.totalCountCache && 
+        Date.now() - this.totalCountCache.timestamp < this.COUNT_CACHE_TTL &&
+        this.totalCountCache.filter === filterKey;
+
+      if (cacheValid) {
+        console.log('📦 Using cached total count');
+        totalCount = this.totalCountCache!.count;
+      } else {
+        console.log('🔄 Fetching total count');
+        // Create separate count query (expensive but necessary for first load)
+        let countQuery = supabase
+          .from("stickers")
+          .select("id", { count: 'exact', head: true });
+
+        // Apply same filters for accurate count
+        if (options.search) {
+          countQuery = countQuery.or(
+            `name.ilike.%${options.search}%,tags.cs.{${options.search}}`
+          );
+        }
+        if (options.tag && options.tag !== "all") {
+          countQuery = countQuery.contains('tags', [options.tag]);
+        }
+
+        const { count } = await countQuery;
+        totalCount = count || 0;
+
+        // Cache the result
+        this.totalCountCache = {
+          count: totalCount,
+          timestamp: Date.now(),
+          filter: filterKey
+        };
+      }
+    }
+
+    // Efficient hasMore calculation
+    if (totalCount > 0) {
+      hasMore = (options.offset + options.limit) < totalCount;
+    } else {
+      // Fallback: if we got full limit, probably more data exists
+      hasMore = (data?.length || 0) === options.limit;
+    }
 
     console.log(
-      `📊 Paginated fetch: ${data?.length || 0} stickers, total: ${totalCount}, hasMore: ${hasMore}`
+      `📊 Optimized paginated fetch: ${data?.length || 0} stickers, total: ${totalCount}, hasMore: ${hasMore}, cached: ${this.totalCountCache ? '✅' : '❌'}`
     );
 
     return {
@@ -109,8 +197,19 @@ export class DatabaseService {
     };
   }
 
-  // Get a single sticker by ID
+  // Cache for individual stickers
+  private static stickerCache: Map<string, { data: StickerData; timestamp: number }> = new Map();
+  private static readonly STICKER_CACHE_TTL = 10 * 60 * 1000; // 10 minutes cache
+
+  // Get a single sticker by ID (with caching)
   static async getSticker(id: string) {
+    // Check cache first
+    const cached = this.stickerCache.get(id);
+    if (cached && Date.now() - cached.timestamp < this.STICKER_CACHE_TTL) {
+      console.log(`📦 Using cached sticker: ${id}`);
+      return cached.data;
+    }
+
     const { data, error } = await supabase
       .from("stickers")
       .select("*")
@@ -122,35 +221,92 @@ export class DatabaseService {
       throw new Error("Sticker not found");
     }
 
+    // Cache the result
+    this.stickerCache.set(id, {
+      data,
+      timestamp: Date.now()
+    });
+
+    // Clean old entries periodically (prevent memory leaks)
+    if (this.stickerCache.size > 100) {
+      const now = Date.now();
+      for (const [key, value] of this.stickerCache.entries()) {
+        if (now - value.timestamp > this.STICKER_CACHE_TTL) {
+          this.stickerCache.delete(key);
+        }
+      }
+    }
+
+    console.log(`🔄 Fetched and cached sticker: ${id}`);
     return data;
   }
 
-  // Get popular tags for search suggestions
+  // Get popular tags for search suggestions (optimized with caching)
+  private static popularTagsCache: { data: { tag: string; count: number }[]; timestamp: number } | null = null;
+  private static readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
+
   static async getPopularTags() {
+    // Check cache first
+    if (this.popularTagsCache && 
+        Date.now() - this.popularTagsCache.timestamp < this.CACHE_TTL) {
+      console.log('📦 Using cached popular tags');
+      return this.popularTagsCache.data;
+    }
+
+    try {
+      // Use RPC function for server-side aggregation (much more efficient)
+      const { data: rpcData, error: rpcError } = await supabase
+        .rpc('get_popular_tags', { limit_count: 10 });
+
+      if (!rpcError && rpcData) {
+        console.log('🚀 Using server-side tag aggregation');
+        // Cache the result
+        this.popularTagsCache = {
+          data: rpcData,
+          timestamp: Date.now()
+        };
+        return rpcData;
+      }
+    } catch (error) {
+      console.warn('⚠️ RPC function not available, falling back to client-side aggregation', error);
+    }
+
+    // Fallback to optimized client-side aggregation (still better than before)
+    console.log('🔄 Using client-side tag aggregation fallback');
     const { data, error } = await supabase
       .from("stickers")
-      .select("tags");
+      .select("tags")
+      .not('tags', 'is', null) // Only get stickers with tags
+      .limit(500); // Limit to prevent memory issues with large datasets
 
     if (error) {
       console.error("Error fetching tags:", error);
       return [];
     }
 
-    // Flatten and count all tags
-    const tagCounts = data.reduce((acc, sticker) => {
+    // Flatten and count all tags (more efficient implementation)
+    const tagCounts: Record<string, number> = {};
+    for (const sticker of data) {
       if (sticker.tags) {
-        sticker.tags.forEach((tag: string) => {
-          acc[tag] = (acc[tag] || 0) + 1;
-        });
+        for (const tag of sticker.tags) {
+          tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+        }
       }
-      return acc;
-    }, {} as Record<string, number>);
+    }
 
-    // Return sorted by popularity (most used first), limited to top 10
-    return Object.entries(tagCounts)
+    // Sort and limit in one pass
+    const result = Object.entries(tagCounts)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 10)
       .map(([tag, count]) => ({ tag, count }));
+
+    // Cache the result
+    this.popularTagsCache = {
+      data: result,
+      timestamp: Date.now()
+    };
+
+    return result;
   }
 
   // Track a download
